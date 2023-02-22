@@ -1,0 +1,289 @@
+#!/usr/bin/env bash
+
+PATH=$PATH:../lib/
+
+file_to_translate="$3"
+tenant_token="$1"
+project_path="$2"
+product_id=$PRODUCT_BUNDLE_IDENTIFIER
+base_language='en'
+api_url='https://api.dev.polyglot.rocks'
+backup_path="/tmp/$project_path/`git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' || ([ -n "$GITHUB_HEAD_REF" ] && echo $GITHUB_HEAD_REF) || echo $RANDOM`"
+backup_file='.last_used_manual_translations'
+prev_translations_file="$backup_path/$backup_file"
+is_mac_os=false
+
+escape_for_sed() {
+    echo "$1" | sed -e 's/\\/\\\\/g; s/\//\\\//g; s/&/\\\&/g'
+}
+
+escape_for_grep() {
+    sed 's/[][\.|$(){}?+*^]/&/g' <<< "$*"
+}
+
+response_to_js_map() {
+    escaped_quote='\\"'
+    quote="'"
+    fixed_response=`echo "$1" | sed -e "s/$escaped_quote/$quote/g"`
+    echo "$fixed_response" | jq -r 'del(.[].description?, .[].translations.en?) | map( { (.stringId|tostring): .translations } ) | add | del(.[].stringId)'
+}
+
+calc_md5() {
+    if [ $is_mac_os = true ]; then
+        echo "$1" | md5
+    else
+        echo "$1" | md5sum | cut -d ' ' -f 1
+    fi
+}
+
+translation_key() {
+    echo `calc_md5 "$1|~|$2"`
+}
+
+set_translation() {
+    md5key="`translation_key \"$2\" \"$3\"`"
+    printf -v "$1_translations__${md5key}" %s "$4"
+}
+
+get_translation() {
+    n="$1_translations__`translation_key \"$2\" \"$3\"`"
+    echo ${!n}
+}
+
+find_duplicates() {
+    echo `echo "$1" | sort | sed -e 's/"\(.*\)" *= *.*;/\1/' | uniq -c | grep -v "^\s*$\|^.*\/\/" | grep -v '^ *1 '`
+}
+
+fill_translations_map() {
+    data=''
+
+    if [ -z "$3" ]; then
+        data=`echo "$2" | jq -rc 'to_entries | .[]'`
+    else
+        data=`jq -rcn --argfile prev "$2" --argfile new "$3" '$new|with_entries(select($prev[.key] != .value))|to_entries|.[]'`
+    fi
+
+    while read item ; do
+        id="`echo $item | jq -r '.key'`"
+        while IFS="=" read -r key value
+        do
+            set_translation "$1" "$id" "$key" "$value"
+        done < <(echo $item | jq -rc '.value|to_entries|map("\(.key)=\(.value.value)") | .[]')
+    done < <(echo "$data")
+}
+
+translate_string() {
+    id="$1"
+    value="$2"
+    encoded_id=`echo "$id" | sed -e "s/\%/\%25"/g`
+    encoded_id=`echo "$encoded_id" | jq -Rr @uri`
+
+    api_response=$(curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$encoded_id" -d "{ \"translations\": { \"en\": \"$value\" } }" -s)
+
+    if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
+        response_json=`response_to_js_map "[$api_response]"`
+        echo "$response_json"
+    else
+        echo ''
+    fi
+}
+
+export PATH=/opt/homebrew/bin:$PATH
+mkdir -p "$backup_path"
+
+if [ "$1" = '--clear-cache' ]; then
+    if [ -z $PROJECT_NAME ] ; then
+        echo 'Project name is not specified. Set $PROJECT_NAME or pass "./" to it'
+        exit 1
+    fi
+
+    echo "{}" > "$prev_translations_file"
+    echo 'Cache is successfully cleared'
+    exit 0
+fi
+
+if [ -z `which jq` ] ; then
+    echo "'jq' is not installed (try 'brew install jq')"
+    exit 1
+fi
+
+if [ -z $tenant_token ] ; then
+    echo 'Tenant token is required as a first argument'
+    exit 1
+fi
+
+if [ -z $project_path ] ; then
+    project_path='./'
+fi
+
+if [ -z $product_id ] ; then
+    echo 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
+    exit 1
+fi
+
+if [ `which md5` ] ; then
+    is_mac_os=true
+fi
+
+if [ -z "$file_to_translate" ] ; then
+    file_to_translate="Localizable.strings"
+fi
+
+new_translations_file=/tmp/translations.$RANDOM.json
+echo '{}' > $new_translations_file
+
+langs_path=`find $project_path \( -name Pods -o -name Carthage \) -prune -o -type d -name *.lproj -print | head -1 | sed -e 's/\/[a-z]*\.lproj//'`
+escaped_langs_path="`escape_for_sed $langs_path`"
+all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//'`
+
+# checking for duplicates
+base_file=`find "$project_path" | grep "$file_to_translate" | grep en.lproj | head -1`
+base_file_content=`grep "=" "$base_file"`
+duplicates=`find_duplicates "$base_file_content"`
+
+if [ -n "$duplicates" ] ; then
+    echo "Found duplicates in $base_file"
+    echo $duplicates
+    exit 43
+fi
+
+[ -f "$prev_translations_file" ] || echo "{}" > "$prev_translations_file"
+
+api_response=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings?manual=true" -s)
+
+case `echo $api_response | jq -r '.message?'` in
+    'Not authorised')
+        echo "Invalid tenant token"
+        exit 1;;
+    'Not found')
+        langs_json=`cat $all_languages | sed -e 's/.*/"&",/' -e '$s/,//'`
+        curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id" -d "{ \"languages\": [$langs_json] }" -s;;
+esac
+
+if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
+    (response_to_js_map "$api_response") > $new_translations_file
+fi
+
+new_translations_data=`cat $new_translations_file`
+prev_translations_data=`cat $prev_translations_file`
+
+if [ "`calc_md5 \"$new_translations_data\"`" != "`calc_md5 \"$prev_translations_data\"`" ] || [ "$FORCE_REFRESH" = "true" ] ; then
+    echo Manual translations changed
+    manual_translations_changed=true
+else
+    echo Manual translations have not changed
+    manual_translations_changed=false
+fi
+
+if [ $manual_translations_changed = true ] ; then
+    fill_translations_map 'manual' "$prev_translations_file" "$new_translations_file"
+fi
+
+base_file_lines=`echo "$base_file_content" | wc -l`
+new_languages=`echo "$all_languages" | sed -e "s/$base_language//"`
+# split multiline string into array
+OIFS="$IFS"
+IFS='
+'
+IFS=${IFS:0:1}
+langs=( $new_languages )
+IFS="$OIFS"
+
+for language in ${langs[@]}; do
+    file="$langs_path/$language.lproj/$file_to_translate"
+    echo ''
+    echo "Processing $file"
+    file_lines=`grep -c "=" "$file"`
+    new_strings=true
+
+    if [ $file_lines -eq $base_file_lines ]; then
+        new_strings=false
+    else
+        echo "$base_file_lines lines in base file, $file_lines lines in $file"
+
+        if [ $file_lines -gt $base_file_lines ]; then
+            file_content=`grep "=" "$file"`
+            duplicates=`find_duplicates "$file_content"`
+
+            if [ -n "$duplicates" ] ; then
+                echo "Found duplicates in $file"
+                echo $duplicates
+            fi
+        fi
+    fi
+
+    if [[ $manual_translations_changed = false ]] && [[ $new_strings = false ]] ; then
+        echo "File $file seems to be translated already"
+        continue;
+    fi
+
+    while read line; do
+        if [ "$line" != "" ]; then
+            id=`echo $line | cut -d '=' -f 1`
+            id=`echo ${id//\"}`
+            base_value=`echo $line | cut -d '=' -f 2`
+            base_value=`echo ${base_value//\"}`
+            base_value=`echo ${base_value//;}`
+            manual_translation=`get_translation 'manual' "$id" "$language"`
+            old_record="\"$id\" = "
+            escaped_old_record=`escape_for_grep "$old_record"`
+
+            if [ -n "$manual_translation" ]; then
+                new_record="\"$id\" = \"$manual_translation\";"
+                escaped_new_record=`escape_for_grep "$new_record"`
+
+                if [ "`grep \"$escaped_new_record\" $file`" ]; then
+                    continue;
+                elif [ "`grep \"$escaped_old_record\" $file`" ]; then
+                    escaped_old_record=`escape_for_sed "$old_record"`
+                    escaped_new_record=`escape_for_sed "$new_record"`
+                    sed -i '' -e "s/$escaped_old_record.*/$escaped_new_record/" "$file"
+                else
+                    echo "$new_record" >> $file
+                fi
+
+                continue;
+            fi
+
+            is_new_translation=true
+
+            if [ "`grep \"$escaped_old_record\" $file`" ]; then
+                if [ -z "`grep -Fx \"$line\" $file`" ]; then
+                    continue;
+                else
+                    is_new_translation=false
+                fi
+            fi
+
+            auto_translation=`get_translation 'auto' "$id" "$language"`
+
+            if [ -z "$auto_translation" ]; then
+                echo "Getting auto-translations for \"$id\""
+                localisation="`translate_string \"$id\" \"$base_value\"`"
+                [ -n "$localisation" ] && fill_translations_map 'auto' "$localisation"
+                auto_translation=`get_translation 'auto' "$id" "$language"`
+
+                if [ -z "$auto_translation" ]; then
+                    echo "Failed to get auto-translations"
+                    continue;
+                fi
+            fi
+
+            if [ $is_new_translation = true ]; then
+                echo "\"$id\" = \"$auto_translation\";" >> $file
+            else
+                old_value=`escape_for_sed "$line"`
+                new_line="\"$id\" = \"$auto_translation\";"
+
+                if [ "$base_value" = "$auto_translation" ]; then
+                    new_line="$new_line //"
+                fi
+
+                new_value=`escape_for_sed "$new_line"`
+                sed -i '' -e "s/$old_value/$new_value/" "$file"
+            fi
+        fi
+    done < <(echo "$base_file_content")
+done
+
+mv "$new_translations_file" "$prev_translations_file"
