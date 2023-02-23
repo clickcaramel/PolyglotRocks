@@ -113,7 +113,7 @@ if [ -z $tenant_token ] ; then
 fi
 
 if [ -z $project_path ] ; then
-    project_path='./'
+    project_path="${PROJECT_DIR:-./}"
 fi
 
 if [ -z $product_id ] ; then
@@ -137,7 +137,7 @@ escaped_langs_path="`escape_for_sed $langs_path`"
 all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//'`
 
 # checking for duplicates
-base_file=`find "$project_path" | grep "$file_to_translate" | grep en.lproj | head -1`
+base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
 base_file_content=`grep "=" "$base_file"`
 duplicates=`find_duplicates "$base_file_content"`
 
