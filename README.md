@@ -22,4 +22,4 @@ Replace `<your token>` with the API token provided by PolyglotRocks.
 
 ## License
 
-**PolyglotRocks** is released under the MIT license. See [LICENSE](./LICENSE) for details.
+**PolyglotRocks** is released under the Apache-2.0 license. See [LICENSE](./LICENSE) for details.
