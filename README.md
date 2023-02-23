@@ -15,7 +15,7 @@ Then, run `pod install` to install the library.
 To use PolyglotRocks in your Xcode project, add the following command to the build phase:
 
 ```plain
-"${PODS_ROOT}/PolyglotRocks/polyglot" <your token>
+"${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your token>
 ```
 
 Replace `<your token>` with the API token provided by PolyglotRocks.

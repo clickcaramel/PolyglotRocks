@@ -8,5 +8,5 @@ Pod::Spec.new do |s|
   s.author = { 'bleshik' => 'abalchunas@4spaces.company' }
   s.source = { :git => 'https://github.com/clickcaramel/PolyglotRocks.git', :tag => s.version.to_s }
   s.ios.deployment_target = '11.0'
-  s.source_files = 'PolyglotRocks/**/*'
+  s.source_files = 'bin/**/*'
 end
