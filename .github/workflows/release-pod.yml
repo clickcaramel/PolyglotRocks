@@ -6,6 +6,10 @@ on:
       - main
     tags:
       - '*'
+    paths:
+      - 'bin/**'
+      - 'tests/**'
+      - 'PolyglotRocks.podspec'
 
 jobs:
   build:
