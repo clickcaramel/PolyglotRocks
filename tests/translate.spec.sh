@@ -2,7 +2,7 @@
 
 languages=(en fr de)
 app_name='TestApp'
-script='../PolyglotRocks/polyglot'
+script='../bin/polyglot'
 file_name='Localizable.strings'
 other_source='Other.strings'
 tenant_token='f233f89a-7868-4e53-854c-9fa60f5b283e'
@@ -11,6 +11,11 @@ api_url='https://api.dev.polyglot.rocks'
 product_id='test.bash.app'
 base_file="$translations_path/en.lproj/$file_name"
 export PROJECT_NAME='test.app'
+
+cache_root="/tmp"
+if [ -n "$GITHUB_HEAD_REF" ]; then
+    cache_root="./tmp"
+fi
 
 local_env_init() {
     rm -rf "$translations_path"
@@ -22,7 +27,7 @@ local_env_init() {
         echo "" > "$path/$other_source"
     done
 
-    rm -rf "/tmp/$PROJECT_NAME"
+    rm -rf "$cache_root/$PROJECT_NAME"
     echo '"Cancel" = "Cancel";
 // some comment
 "Saved successfully" = "Saved successfully";
@@ -77,7 +82,9 @@ test_clear_cache() {
     add_manual_translations
     output=`$script $tenant_token ../$app_name`
     output=`$script --clear-cache`
-    cache_content=`cat "/tmp/$PROJECT_NAME/.last_used_manual_translations"`
+
+    cache_path=`find $cache_root/$PROJECT_NAME -name ".last_used_manual_translations" | head -1`
+    cache_content=`cat "$cache_path"`
     assert_equals "$cache_content" '{}'
 }
 
@@ -96,7 +103,7 @@ test_auto_translation() {
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     custom_translation=`grep 'Loading' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     marked_translation=`grep '4K' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
-    assert_equals $translation '"Absagen";'
+    assert_equals $translation '"Abbrechen";'
     assert_equals ' "4K"; //' "$marked_translation"
     assert_equals $custom_translation '"custom-translation";'
 }
