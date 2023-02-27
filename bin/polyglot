@@ -3,7 +3,9 @@
 export PATH=$PATH:../lib/
 export PATH=/opt/homebrew/bin:$PATH
 
-api_url='https://api.dev.polyglot.rocks'
+api_url='https://api.polyglot.rocks'
+api_url=${API_URL:-$api_url}
+
 is_mac_os=false
 
 file_to_translate="$3"
