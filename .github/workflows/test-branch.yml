@@ -1,0 +1,15 @@
+name: Test Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: run tests
+        run: |
+          ./tests/run_tests.sh
