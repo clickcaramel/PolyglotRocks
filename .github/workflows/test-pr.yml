@@ -5,6 +5,9 @@ on:
     types: [submitted]
     branches:
       - main
+    paths:
+      - 'bin/**'
+      - 'tests/**'
 
 jobs:
   test:

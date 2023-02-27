@@ -1,5 +1,11 @@
 # PolyglotRocks
 
+<p align="left">
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/clickcaramel/PolyglotRocks/test-branch.yml?label=tests">
+  <img alt="GitHub" src="https://img.shields.io/github/license/clickcaramel/PolyglotRocks">
+  <img alt="CocoaPods" src="https://img.shields.io/cocoapods/v/PolyglotRocks">
+</p>
+
 PolyglotRocks is a tool that simplifies the localization process for your iOS mobile app. By dropping in our SDK into your project and running the build, you can get AI translations instantly and manual ones a bit later.
 
 ## Installation
