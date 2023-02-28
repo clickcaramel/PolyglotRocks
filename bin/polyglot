@@ -1,12 +1,37 @@
 #!/usr/bin/env bash
 
-export PATH=$PATH:../lib/
-export PATH=/opt/homebrew/bin:$PATH
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+is_mac_os=false
+
+if [[ $(uname -s) == "Darwin" ]]; then
+    is_mac_os=true
+elif [[ $(uname -s) == "Linux" ]]; then
+    is_mac_os=false
+else
+    echo "Error: Operating system is not supported"
+    exit 1
+fi
+
+if [ $is_mac_os = true ]; then
+    export PATH=/opt/homebrew/bin:$PATH
+    export PATH=$BASEDIR/lib:$PATH
+
+    jq() {
+        jq-osx-amd64 "$@"
+    }
+
+    export -f jq
+else
+    if [ -z `which jq` ] ; then
+        echo "Error: 'jq' is not installed"
+        exit 1
+    fi
+fi
+
 
 api_url='https://api.polyglot.rocks'
 api_url=${API_URL:-$api_url}
-
-is_mac_os=false
 
 file_to_translate="$3"
 tenant_token="$1"
@@ -123,11 +148,6 @@ if [ "$1" = '--clear-cache' ]; then
     exit 0
 fi
 
-if [ -z `which jq` ] ; then
-    echo "'jq' is not installed (try 'brew install jq')"
-    exit 1
-fi
-
 if [ -z $tenant_token ] ; then
     echo 'Tenant token is required as a first argument'
     exit 1
@@ -140,10 +160,6 @@ fi
 if [ -z $product_id ] ; then
     echo 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
     exit 1
-fi
-
-if [ `which md5` ] ; then
-    is_mac_os=true
 fi
 
 if [ -z "$file_to_translate" ] ; then
