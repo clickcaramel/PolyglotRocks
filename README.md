@@ -8,7 +8,9 @@
 
 PolyglotRocks is a tool that simplifies the localization process for your iOS mobile app. By dropping in our SDK into your project and running the build, you can get AI translations instantly and manual ones a bit later.
 
-## Installation
+## Usage
+
+### CocoaPods
 
 To install PolyglotRocks, add the following line to your Podfile:
 
@@ -25,6 +27,29 @@ To use PolyglotRocks in your Xcode project, add the following command to the bui
 ```
 
 Replace `<your token>` with the API token provided by PolyglotRocks.
+
+### Docker
+
+PolyglotRocks can also be used with Docker. To get started, clone the repository and build the Docker image by running the following command:
+
+```bash
+docker build -t polyglot .
+```
+
+Once the image has been built, you can run a Docker container with the following command:
+
+```bash
+docker run --rm \
+    --env "TOKEN=<your_token>" \
+    --env "PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id>" \
+    --env "PROJECT_NAME=<your_project_name>" \
+    --volume "<path_to_project>:/home/polyglot/target" \
+    polyglot
+```
+
+Replace `<your_token>`, `<your_bundle_id>`, `<your_project_name>`, and `<path_to_project>` with your API token, product bundle identifier, project name, and the path to your Xcode project, respectively.
+
+> Keep in mind that Docker uses absolute paths volume mappings.
 
 ## License
 
