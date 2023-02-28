@@ -2,14 +2,8 @@ name: CocoaPods
 
 on:
   push:
-    branches:
-      - main
     tags:
       - '*'
-    paths:
-      - 'bin/**'
-      - 'tests/**'
-      - 'PolyglotRocks.podspec'
 
 jobs:
   build:
