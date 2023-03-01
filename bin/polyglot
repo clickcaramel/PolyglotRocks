@@ -29,7 +29,6 @@ else
     fi
 fi
 
-
 api_url='https://api.polyglot.rocks'
 api_url=${API_URL:-$api_url}
 
@@ -45,7 +44,7 @@ if [ -n "$GITHUB_HEAD_REF" ]; then
 fi
 
 if [ -n "$PROJECT_NAME" ]; then
-    branch=`git rev-parse --abbrev-ref HEAD`
+    branch=`git rev-parse --abbrev-ref HEAD 2> /dev/null`
     
     if [ -z "$branch" ]; then
         if [ -n "$GITHUB_HEAD_REF" ]; then
@@ -53,6 +52,8 @@ if [ -n "$PROJECT_NAME" ]; then
         else
             branch="$RANDOM"
         fi
+    else
+        branch="$RANDOM"
     fi
     
     branch=`echo "$branch" | tr -d '/()'`
