@@ -20,7 +20,7 @@ jobs:
         with:
           fallback: 0.1.0
 
-  cocoa-pods:
+  cocoapods:
     runs-on: macos-latest
     needs: analyze-tags
     steps:
@@ -56,5 +56,5 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: |
-            clickcaramel/polyglot-rocks:${{ needs.analyze-tags.outputs.latest-tag }}
-            clickcaramel/polyglot-rocks:latest
+            ghcr.io/clickcaramel/polyglot-rocks:${{ needs.analyze-tags.outputs.latest-tag }}
+            ghcr.io/clickcaramel/polyglot-rocks:latest
