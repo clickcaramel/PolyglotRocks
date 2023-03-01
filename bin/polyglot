@@ -52,8 +52,6 @@ if [ -n "$PROJECT_NAME" ]; then
         else
             branch="$RANDOM"
         fi
-    else
-        branch="$RANDOM"
     fi
     
     branch=`echo "$branch" | tr -d '/()'`
