@@ -58,3 +58,4 @@ jobs:
           tags: |
             ghcr.io/clickcaramel/polyglot-rocks:${{ needs.analyze-tags.outputs.latest-tag }}
             ghcr.io/clickcaramel/polyglot-rocks:latest
+          outputs: type=registry,annotation-index.org.opencontainers.image.source=https://github.com/clickcaramel/PolyglotRocks,annotation-index.org.opencontainers.image.licenses=Apache-2.0
