@@ -43,7 +43,7 @@ if [ -n "$GITHUB_HEAD_REF" ]; then
     backup_root="./tmp"
 fi
 
-if [ -n "$PROJECT_NAME" ]; then
+if [ -n "$product_id" ]; then
     branch=`git rev-parse --abbrev-ref HEAD 2> /dev/null`
     
     if [ -z "$branch" ]; then
@@ -55,7 +55,7 @@ if [ -n "$PROJECT_NAME" ]; then
     fi
     
     branch=`echo "$branch" | tr -d '/()'`
-    backup_path="$backup_root/$PROJECT_NAME/$branch"
+    backup_path="$backup_root/$product_id/$branch"
     backup_file='.last_used_manual_translations'
     prev_translations_file="$backup_path/$backup_file"
     mkdir -p "$backup_path"
@@ -137,8 +137,8 @@ translate_string() {
 }
 
 if [ "$1" = '--clear-cache' ]; then
-    if [ -z $PROJECT_NAME ] ; then
-        echo 'Project name is not specified. Set $PROJECT_NAME or pass "./" to it'
+    if [ -z $product_id ] ; then
+        echo 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
         exit 1
     fi
 
