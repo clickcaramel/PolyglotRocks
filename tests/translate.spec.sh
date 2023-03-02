@@ -10,7 +10,6 @@ translations_path="../$app_name/Extra"
 api_url='https://api.dev.polyglot.rocks'
 product_id='test.bash.app'
 base_file="$translations_path/en.lproj/$file_name"
-export PROJECT_NAME='test.app'
 
 cache_root="/tmp"
 if [ -n "$GITHUB_HEAD_REF" ]; then
@@ -27,7 +26,7 @@ local_env_init() {
         echo "" > "$path/$other_source"
     done
 
-    rm -rf "$cache_root/$PROJECT_NAME"
+    rm -rf "$cache_root/$product_id"
     echo '"Cancel" = "Cancel";
 // some comment
 "Saved successfully" = "Saved successfully";
@@ -55,7 +54,6 @@ setup_suite() {
 
 setup() {
     export PRODUCT_BUNDLE_IDENTIFIER=$product_id
-    export PROJECT_NAME='test.app'
 }
 
 test_token_not_specified() {
@@ -73,9 +71,9 @@ test_invalid_tenant_token() {
 }
 
 test_clear_cache_error() {
-    export PROJECT_NAME=''
+    export PRODUCT_BUNDLE_IDENTIFIER=''
     result=`$script --clear-cache`
-    assert_equals "$result" 'Project name is not specified. Set $PROJECT_NAME or pass "./" to it'
+    assert_equals "$result" 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
 }
 
 test_clear_cache() {
@@ -83,7 +81,7 @@ test_clear_cache() {
     output=`$script $tenant_token ../$app_name`
     output=`$script --clear-cache`
 
-    cache_path=`find $cache_root/$PROJECT_NAME -name ".last_used_manual_translations" | head -1`
+    cache_path=`find $cache_root/$product_id -name ".last_used_manual_translations" | head -1`
     cache_content=`cat "$cache_path"`
     assert_equals "$cache_content" '{}'
 }

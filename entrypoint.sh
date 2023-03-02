@@ -10,9 +10,4 @@ if [ -z "$PRODUCT_BUNDLE_IDENTIFIER" ]; then
   exit 1
 fi
 
-if [ -z "$PROJECT_NAME" ]; then
-  echo "Error: PROJECT_NAME environment variable is not set"
-  exit 1
-fi
-
 ./bin/polyglot "$TOKEN" ./target

@@ -42,14 +42,13 @@ Once the image has been built, you can run a Docker container with the following
 docker run --rm \
     --env "TOKEN=<your_token>" \
     --env "PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id>" \
-    --env "PROJECT_NAME=<your_project_name>" \
     --volume "<path_to_project>:/home/polyglot/target" \
     polyglot
 ```
 
-Replace `<your_token>`, `<your_bundle_id>`, `<your_project_name>`, and `<path_to_project>` with your API token, product bundle identifier, project name, and the path to your Xcode project, respectively.
+Replace `<your_token>`, `<your_bundle_id>`, and `<path_to_project>` with your API token, product bundle identifier, and the path to your Xcode project, respectively.
 
-> Keep in mind that Docker uses absolute paths volume mappings.
+> Keep in mind that Docker uses absolute paths in volume mappings.
 
 ## License
 
