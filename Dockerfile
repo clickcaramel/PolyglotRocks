@@ -10,4 +10,4 @@ COPY entrypoint.sh /home/polyglot/entrypoint.sh
 WORKDIR /home/polyglot
 
 RUN chmod +x ./entrypoint.sh
-ENTRYPOINT ./entrypoint.sh
+ENTRYPOINT ["/bin/bash", "entrypoint.sh"]
