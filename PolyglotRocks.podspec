@@ -7,7 +7,7 @@ Pod::Spec.new do |s|
   s.homepage = 'https://github.com/clickcaramel/PolyglotRocks'
   s.license = { :type => 'Apache 2.0', :file => 'LICENSE' }
   s.author = { 'bleshik' => 'abalchunas@4spaces.company' }
-  s.source = { :git => 'https://github.com/clickcaramel/PolyglotRocks.git', :tag => s.version.to_s }
+  s.source = { :git => 'https://github.com/clickcaramel/PolyglotRocks.git', :tag => "v#{s.version.to_s}" }
   
   s.ios.deployment_target = '11.0'
   s.source_files = 'bin/**/*'
