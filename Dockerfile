@@ -7,7 +7,5 @@ RUN apk update && apk add --no-cache bash jq curl git
 COPY bin /home/polyglot/bin
 COPY entrypoint.sh /home/polyglot/entrypoint.sh
 
-WORKDIR /home/polyglot
-
-RUN chmod +x ./entrypoint.sh
-ENTRYPOINT ["/bin/bash", "entrypoint.sh"]
+RUN chmod +x /home/polyglot/entrypoint.sh
+ENTRYPOINT ["/bin/bash", "/home/polyglot/entrypoint.sh"]
