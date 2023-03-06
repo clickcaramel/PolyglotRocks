@@ -13,20 +13,18 @@ else
     exit 1
 fi
 
-if [ $is_mac_os = true ]; then
-    export PATH=/opt/homebrew/bin:$PATH
-    export PATH=$BASEDIR/lib:$PATH
+export PATH=$BASEDIR/lib:$PATH
 
+if [ $is_mac_os = true ]; then
     jq() {
         jq-osx-amd64 "$@"
     }
-
     export -f jq
 else
-    if [ -z `which jq` ] ; then
-        echo "Error: 'jq' is not installed"
-        exit 1
-    fi
+    jq() {
+        jq-linux64 "$@"
+    }
+    export -f jq
 fi
 
 api_url='https://api.polyglot.rocks'
