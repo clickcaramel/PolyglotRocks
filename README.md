@@ -41,32 +41,19 @@ To use PolyglotRocks in your Xcode project, add the following command to the bui
 
 ### Option 2. cURL
 
-To install PolyglotRocks on your local machine, you can use the installation script provided in the GitHub repository. To do this, run the following command in your terminal:
+To run PolyglotRocks on your local machine, you can use special script. To do this, run the following command in your terminal:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/clickcaramel/PolyglotRocks/main/install.sh)"
+/bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" <your_token> <path_to_project>
 ```
+> Replace `<your token>` with the API token provided by PolyglotRocks. Additionally, you can pass an optional path to your Xcode project replacing `<path_to_project>`.
 
-The installation script will create a `.polyglot` directory in your home directory and download the latest version of PolyglotRocks there.
+This script will create a `.polyglot` directory in the working directory, download the latest version of PolyglotRocks there and then execute it.
 
-> Additionally, the script will ask you to add it to the PATH environment variable so that you can run it from anywhere.
-
-After running the installation script, you can run the polyglot command using the following command:
+Keep in mind that in this case you probably need to manually set the environment variables that Xcode usually deals with. For example, like this:
 
 ```bash
-polyglot <your_token>
-```
-
-Replace `<your token>` with the API token provided by PolyglotRocks. Additionally, you can pass the path to your Xcode project:
-
-```bash
-polyglot <your_token> <path_to_project>
-```
-
-Keep in mind that in this case you need to manually set the environment variables that Xcode usually deals with. For example, like this:
-
-```plain
-PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id> polyglot <your_token> <path_to_project>
+PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id> /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" <your_token> <path_to_project>
 ```
 
 > Replace `<your_bundle_id>` with the product bundle identifier of your Xcode project.
