@@ -142,3 +142,14 @@ test_do_nothing_without_updates() {
     assert_equals $files_without_changes 2
     assert_equals $translation_count 1
 }
+
+test_add_new_language() {
+    rm -rf "$cache_root/$product_id"
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id" -d "{ \"languages\": [ \"en\"] }" -s
+    path="$translations_path/ru.lproj";
+    mkdir -p "$path";
+    echo "" > "$path/$file_name"
+    output=`$script $tenant_token ../$app_name`
+    translation=`grep 'Cancel' $path/$file_name | cut -d '=' -f 2`
+    assert_equals ' "Отмена";' "$translation"
+}
