@@ -55,6 +55,7 @@ if [ -n "$product_id" ]; then
     branch=`echo "$branch" | tr -d '/()'`
     backup_path="$backup_root/$product_id/$branch"
     backup_file='.last_used_manual_translations'
+    backup_langs_file="$backup_path/.languages"
     prev_translations_file="$backup_path/$backup_file"
     mkdir -p "$backup_path"
 fi
@@ -134,6 +135,12 @@ translate_string() {
     fi
 }
 
+update_languages() {
+    echo "$1" > "$backup_langs_file"
+    langs_json=`echo "$1" | sed -e 's/.*/"&",/' -e '$s/,//'`
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id" -d "{ \"languages\": [$langs_json] }" -s
+}
+
 if [ "$1" = '--clear-cache' ]; then
     if [ -z $product_id ] ; then
         echo 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
@@ -141,6 +148,7 @@ if [ "$1" = '--clear-cache' ]; then
     fi
 
     echo "{}" > "$prev_translations_file"
+    echo "" > "$backup_langs_file"
     echo 'Cache is successfully cleared'
     exit 0
 fi
@@ -168,7 +176,7 @@ echo '{}' > $new_translations_file
 
 langs_path=`find $project_path \( -name Pods -o -name Carthage \) -prune -o -type d -name *.lproj -print | head -1 | sed -e 's/\/[a-z]*\.lproj//'`
 escaped_langs_path="`escape_for_sed $langs_path`"
-all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//'`
+all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//' | sort`
 
 # checking for duplicates
 base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
@@ -190,12 +198,25 @@ case `echo $api_response | jq -r '.message?'` in
         echo "Invalid tenant token"
         exit 1;;
     'Not found')
-        langs_json=`cat $all_languages | sed -e 's/.*/"&",/' -e '$s/,//'`
-        curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id" -d "{ \"languages\": [$langs_json] }" -s;;
+        update_languages "$all_languages"
 esac
 
 if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
     (response_to_js_map "$api_response") > $new_translations_file
+fi
+
+if [ -f "$backup_langs_file" ]; then
+    if [ -n "`diff <(echo \"$all_languages\") $backup_langs_file`" ]; then
+        update_languages "$all_languages"
+    fi
+else
+    existing_langs=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id" -s | jq -r '.languages[]?')
+
+    if [[ -z "$existing_langs" ]] || [[ -n "`diff <(echo \"$all_languages\") <(echo \"$existing_langs\" | sort)`" ]]; then
+        update_languages "$all_languages"
+    else
+        echo "$all_languages" > "$backup_langs_file"
+    fi
 fi
 
 new_translations_data=`cat $new_translations_file`
