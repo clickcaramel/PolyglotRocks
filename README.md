@@ -12,15 +12,16 @@ PolyglotRocks is a tool that simplifies the localization process for your iOS mo
 
 - [PolyglotRocks](#polyglotrocks)
   - [Contents](#contents)
-  - [Usage](#usage)
-    - [CocoaPods](#cocoapods)
-    - [GitHub Actions](#github-actions)
-    - [Docker](#docker)
+  - [Integration options](#integration-options)
+    - [Option 1. CocoaPods](#option-1-cocoapods)
+    - [Option 2. cURL](#option-2-curl)
+    - [Option 3. GitHub Actions](#option-3-github-actions)
+    - [Option 4. Docker](#option-4-docker)
   - [License](#license)
 
-## Usage
+## Integration options
 
-### CocoaPods
+### Option 1. CocoaPods
 
 To install PolyglotRocks, add the following line to your Podfile:
 
@@ -36,9 +37,28 @@ To use PolyglotRocks in your Xcode project, add the following command to the bui
 "${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your token>
 ```
 
-Replace `<your token>` with the API token provided by PolyglotRocks.
+> Replace `<your token>` with the API token provided by PolyglotRocks.
 
-### GitHub Actions
+### Option 2. cURL
+
+To run PolyglotRocks on your local machine, you can use special script. To do this, run the following command in your terminal:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" <your_token> <path_to_project>
+```
+> Replace `<your token>` with the API token provided by PolyglotRocks. Additionally, you can pass an optional path to your Xcode project replacing `<path_to_project>`.
+
+This script will create a `.polyglot` directory in the working directory, download the latest version of PolyglotRocks there and then execute it.
+
+Keep in mind that in this case you probably need to manually set the environment variables that Xcode usually deals with. For example, like this:
+
+```bash
+PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id> /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" <your_token> <path_to_project>
+```
+
+> Replace `<your_bundle_id>` with the product bundle identifier of your Xcode project.
+
+### Option 3. GitHub Actions
 
 The PolyglotRocks GitHub Action allows you to easily automate the localization process for your projects in CI/CD pipeline. Here is an example workflow for using the action in your GitHub Actions:
 
@@ -57,7 +77,7 @@ jobs:
 
 > Replace `<your_token>`, `<your_bundle_id>`, and `<path_to_project>` with your API token, product bundle identifier, and the path to your Xcode project, respectively.
 
-### Docker
+### Option 4. Docker
 
 PolyglotRocks can also be used with Docker. To get started, pull the image from the repository by running the following command:
 
