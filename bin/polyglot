@@ -255,7 +255,7 @@ fi
 
 if [ $manual_translations_changed = true ] ; then
     echo "`date`: [INFO] Indexing manual translations"
-    time fill_translations_map 'manual' "$prev_translations_file" "$new_translations_file"
+    fill_translations_map 'manual' "$prev_translations_file" "$new_translations_file"
 fi
 
 base_file_lines=`echo "$base_file_content" | wc -l`

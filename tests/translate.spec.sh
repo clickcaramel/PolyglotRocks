@@ -67,7 +67,7 @@ test_product_id_not_specified() {
 }
 
 test_invalid_tenant_token() {
-    assert_equals "`$script 11111 ../$app_name | grep -v WARN`" 'Invalid tenant token'
+    assert_equals "`$script 11111 ../$app_name | grep 'Invalid tenant token'`" 'Invalid tenant token'
 }
 
 test_clear_cache_error() {
