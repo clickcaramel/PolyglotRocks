@@ -1,17 +1,13 @@
 name: Test PR
 
 on:
-  pull_request_review:
-    types: [submitted]
-    branches:
-      - main
+  pull_request:
     paths:
       - 'bin/**'
       - 'tests/**'
 
 jobs:
   test:
-    if: github.event.review.state == 'approved'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
