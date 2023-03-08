@@ -141,6 +141,10 @@ update_languages() {
     curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id" -d "{ \"languages\": [$langs_json] }" -s
 }
 
+get_strings_from_file() {
+    echo "`grep \"=\" \"$1\" | grep -v \"^//\"`"
+}
+
 if [ "$1" = '--clear-cache' ]; then
     if [ -z $product_id ] ; then
         echo 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
@@ -180,7 +184,7 @@ all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e
 
 # checking for duplicates
 base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
-base_file_content=`grep "=" "$base_file" | grep -v "^//"`
+base_file_content=`get_strings_from_file $base_file`
 duplicates=`find_duplicates "$base_file_content"`
 
 if [ -n "$duplicates" ] ; then
@@ -248,12 +252,12 @@ for language in ${langs[@]}; do
     file="$langs_path/$language.lproj/$file_to_translate"
     echo ''
     echo "Processing $file"
-    file_lines=`grep -c "=" "$file"`
+    file_lines=`get_strings_from_file $file | wc -l`
     new_strings=true
     content_diff_reverse=''
 
     if [ $file_lines -eq $base_file_lines ]; then
-        content_diff=`diff <(echo "$base_file_content") <(grep "=" "$file")`
+        content_diff=`diff <(echo "$base_file_content") <(get_strings_from_file $file)`
 
         if [ -n "$content_diff" ]; then
             content_diff_reverse=`grep -F -x -f $base_file $file | grep -v "^//"`
@@ -266,7 +270,7 @@ for language in ${langs[@]}; do
         echo "$base_file_lines lines in base file, $file_lines lines in $file"
 
         if [ $file_lines -gt $base_file_lines ]; then
-            file_content=`grep "=" "$file" | grep -v "^//"`
+            file_content=`get_strings_from_file $file`
             duplicates=`find_duplicates "$file_content"`
 
             if [ -n "$duplicates" ] ; then

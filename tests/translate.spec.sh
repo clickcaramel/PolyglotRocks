@@ -11,7 +11,7 @@ api_url='https://api.dev.polyglot.rocks'
 product_id='test.bash.app'
 base_file="$translations_path/en.lproj/$file_name"
 initial_data='"Cancel" = "Cancel";
-// some comment
+// some comment = 0
 "Saved successfully" = "Saved successfully";
 "4K" = "4K";
 "Loading" = "Loading...";'
@@ -174,7 +174,6 @@ test_remove_duplicates_from_lang_files() {
     echo '"4K" = "4K";' >> $path
     echo '"4K" = "4K";' >> $path
     output=`$script $tenant_token ../$app_name`
-    echo "$output"
     translations_count=`grep -c '4K' $path`
     assert_equals 1 "$translations_count"
 }
