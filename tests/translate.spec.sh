@@ -10,6 +10,11 @@ translations_path="../$app_name/Extra"
 api_url='https://api.dev.polyglot.rocks'
 product_id='test.bash.app'
 base_file="$translations_path/en.lproj/$file_name"
+initial_data='"Cancel" = "Cancel";
+// some comment
+"Saved successfully" = "Saved successfully";
+"4K" = "4K";
+"Loading" = "Loading...";'
 
 cache_root="/tmp"
 if [ -n "$GITHUB_HEAD_REF" ]; then
@@ -22,18 +27,11 @@ local_env_init() {
     for lang in ${languages[@]}; do
         path="$translations_path/$lang.lproj";
         mkdir -p "$path";
-        echo "" > "$path/$file_name"
+        echo "$initial_data" > "$path/$file_name"
         echo "" > "$path/$other_source"
     done
 
     rm -rf "$cache_root/$product_id"
-    echo '"Cancel" = "Cancel";
-// some comment
-"Saved successfully" = "Saved successfully";
-"4K" = "4K";
-"Loading" = "Loading...";' > $base_file
-    echo '"Loading" = "Loading...";' > "$translations_path/fr.lproj/$file_name"
-    echo '"4K" = "4K";' > "$translations_path/fr.lproj/$file_name"
     echo '"Loading" = "custom-translation";' > "$translations_path/de.lproj/$file_name"
 }
 
@@ -97,7 +95,7 @@ test_found_duplicates() {
 
 test_auto_translation() {
     setup_suite
-    bash $script $tenant_token ../$app_name
+    output="`$script $tenant_token ../$app_name`"
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     custom_translation=`grep 'Loading' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     marked_translation=`grep '4K' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
@@ -152,4 +150,20 @@ test_add_new_language() {
     output=`$script $tenant_token ../$app_name`
     translation=`grep 'Cancel' $path/$file_name | cut -d '=' -f 2`
     assert_equals ' "Отмена";' "$translation"
+}
+
+test_translate_equal_strings_when_equal_line_count() {
+    clear_db "$product_id"
+    # x2 launch for getting manual_translations_changed == false
+    output=`$script $tenant_token ../$app_name`
+    output=`$script $tenant_token ../$app_name`
+
+    path="$translations_path/fr.lproj/$file_name";
+    echo "$initial_data" | head -4 > $path
+    echo '"Loading" = "custom-translation";' >> $path
+    output=`$script $tenant_token ../$app_name`
+    translation=`grep 'Cancel' $path | cut -d '=' -f 2`
+    custom_translation=`grep 'Loading' $path | cut -d '=' -f 2`
+    assert_equals ' "Annuler";' "$translation"
+    assert_equals ' "custom-translation";' "$custom_translation"
 }

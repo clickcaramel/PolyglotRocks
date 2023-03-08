@@ -180,7 +180,7 @@ all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e
 
 # checking for duplicates
 base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
-base_file_content=`grep "=" "$base_file"`
+base_file_content=`grep "=" "$base_file" | grep -v "^//"`
 duplicates=`find_duplicates "$base_file_content"`
 
 if [ -n "$duplicates" ] ; then
@@ -250,9 +250,18 @@ for language in ${langs[@]}; do
     echo "Processing $file"
     file_lines=`grep -c "=" "$file"`
     new_strings=true
+    content_diff_reverse=''
 
     if [ $file_lines -eq $base_file_lines ]; then
-        new_strings=false
+        content_diff=`diff <(echo "$base_file_content") <(grep "=" "$file")`
+
+        if [ -n "$content_diff" ]; then
+            content_diff_reverse=`grep -F -x -f $base_file $file | grep -v "^//"`
+
+            if [ -z "$content_diff_reverse" ]; then
+                new_strings=false
+            fi
+        fi
     else
         echo "$base_file_lines lines in base file, $file_lines lines in $file"
 
@@ -267,9 +276,13 @@ for language in ${langs[@]}; do
         fi
     fi
 
-    if [[ $manual_translations_changed = false ]] && [[ $new_strings = false ]] ; then
+    if [ $manual_translations_changed = false ]; then
+      if [ $new_strings = false ]; then
         echo "File $file seems to be translated already"
         continue;
+      elif [ -n "$content_diff_reverse" ]; then
+          base_file_content="$content_diff_reverse"
+      fi
     fi
 
     while read line; do
