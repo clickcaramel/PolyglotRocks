@@ -2,19 +2,20 @@ name: PolyglotRocks
 description: "This action automates Xcode project localization using the PolyglotRocks tool for efficient and automated translations in your CI/CD pipeline."
 
 inputs:
-  path:
-    description: "The path to the Xcode project directory to be localized (relative to the root of the repository)."
-    required: true
   token:
     description: "The API token provided by PolyglotRocks."
     required: true
   bundle_id:
     description: "The product bundle identifier of the Xcode project."
     required: true
+  path:
+    description: "The path to the directory to search files to be localized (relative to the root of the repository)."
+    default: ""
+    required: false
   api_url:
     description: "The URL of the API endpoint to use for localization."
     required: false
-    default: "https://api.dev.polyglot.rocks"
+    default: "https://api.polyglot.rocks"
 
 runs:
   using: "composite"
