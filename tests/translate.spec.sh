@@ -62,17 +62,17 @@ test_token_not_specified() {
 
 test_product_id_not_specified() {
     export PRODUCT_BUNDLE_IDENTIFIER=''
-    result=`$script $tenant_token ../$app_name`
+    result=`$script $tenant_token ../$app_name | grep -v WARN`
     assert_equals "$result" 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
 }
 
 test_invalid_tenant_token() {
-    assert_equals "`$script 11111 ../$app_name`" 'Invalid tenant token'
+    assert_equals "`$script 11111 ../$app_name | grep -v WARN`" 'Invalid tenant token'
 }
 
 test_clear_cache_error() {
     export PRODUCT_BUNDLE_IDENTIFIER=''
-    result=`$script --clear-cache`
+    result=`$script --clear-cache | grep -v WARN`
     assert_equals "$result" 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
 }
 
