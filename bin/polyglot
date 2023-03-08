@@ -1,5 +1,32 @@
 #!/usr/bin/env bash
 
+# declare dictionary if bash supports it
+declare -A translations
+if [ $? -eq 0 ]; then
+    set_translation() {
+        translations[`echo $1_$2_$3`]="$4"
+    }
+
+    get_translation() {
+        echo ${translations[`echo $1_$2_$3`]}
+    }
+else
+    echo "`date`: [WARN] Your Bash version does not support associative arrays, indexing will be slow, we recommend updating your Bash to the newer version."
+    translation_key() {
+        echo `calc_md5 "$1|~|$2"`
+    }
+
+    set_translation() {
+        md5key="`translation_key \"$2\" \"$3\"`"
+        printf -v "$1_translations__${md5key}" %s "$4"
+    }
+
+    get_translation() {
+        n="$1_translations__`translation_key \"$2\" \"$3\"`"
+        echo ${!n}
+    }
+fi
+
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 is_mac_os=false
@@ -9,7 +36,7 @@ if [[ $(uname -s) == "Darwin" ]]; then
 elif [[ $(uname -s) == "Linux" ]]; then
     is_mac_os=false
 else
-    echo "Error: Operating system is not supported"
+    echo `date`: "[ERROR] Operating system is not supported"
     exit 1
 fi
 
@@ -83,20 +110,6 @@ calc_md5() {
     fi
 }
 
-translation_key() {
-    echo `calc_md5 "$1|~|$2"`
-}
-
-set_translation() {
-    md5key="`translation_key \"$2\" \"$3\"`"
-    printf -v "$1_translations__${md5key}" %s "$4"
-}
-
-get_translation() {
-    n="$1_translations__`translation_key \"$2\" \"$3\"`"
-    echo ${!n}
-}
-
 find_duplicates() {
     echo `echo "$1" | sort | sed -e 's/"\(.*\)" *= *.*;/\1/' | uniq -c | grep -v "^\s*$\|^.*\/\/" | grep -v '^ *1 '`
 }
@@ -130,8 +143,12 @@ translate_string() {
     if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
         response_json=`response_to_js_map "[$api_response]"`
         echo "$response_json"
+    elif [ "`echo \"$api_response\" | grep 'paymentLink'`" ]; then
+        echo "You've reached limits of your free plan. Subscribe to remove the limits and get native translations made by humans. Here is the link for that: `echo \"$api_response\" | jq '.paymentLink' | sed -e 's/^"//' -e 's/"$//'`"
+        return 42
     else
-        echo ''
+        echo "Something went wrong. Please contact our support team at support@polyglot.rocks. Please, provide the following server response: ${api_response}"
+        return 50
     fi
 }
 
@@ -191,6 +208,7 @@ fi
 
 [ -f "$prev_translations_file" ] || echo "{}" > "$prev_translations_file"
 
+echo "`date`: [INFO] Downloading translations from the server"
 api_response=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings?manual=true" -s)
 
 case `echo $api_response | jq -r '.message?'` in
@@ -198,40 +216,46 @@ case `echo $api_response | jq -r '.message?'` in
         echo "Invalid tenant token"
         exit 1;;
     'Not found')
+        echo "`date`: [INFO] $product_id is not found, creating one with the following languages: $all_languages"
         update_languages "$all_languages"
 esac
 
 if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
+    echo "`date`: [INFO] Saving the downloaded translations to $new_translations_file"
     (response_to_js_map "$api_response") > $new_translations_file
 fi
 
 if [ -f "$backup_langs_file" ]; then
     if [ -n "`diff <(echo \"$all_languages\") $backup_langs_file`" ]; then
+        echo "`date`: [INFO] Updating $product_id languages, new set of languages is $all_languages"
         update_languages "$all_languages"
     fi
 else
     existing_langs=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id" -s | jq -r '.languages[]?')
 
     if [[ -z "$existing_langs" ]] || [[ -n "`diff <(echo \"$all_languages\") <(echo \"$existing_langs\" | sort)`" ]]; then
+        echo "`date`: [INFO] Updating $product_id languages, new set of languages is $all_languages"
         update_languages "$all_languages"
     else
         echo "$all_languages" > "$backup_langs_file"
     fi
 fi
 
+echo "`date`: [INFO] Loading current and previous translations into memory from $prev_translations_file and $new_translations_file"
 new_translations_data=`cat $new_translations_file`
 prev_translations_data=`cat $prev_translations_file`
 
 if [ "`calc_md5 \"$new_translations_data\"`" != "`calc_md5 \"$prev_translations_data\"`" ] || [ "$FORCE_REFRESH" = "true" ] ; then
-    echo Manual translations changed
+    echo "`date`: [INFO] Manual translations changed"
     manual_translations_changed=true
 else
-    echo Manual translations have not changed
+    echo "`date`: [INFO] Manual translations have not changed"
     manual_translations_changed=false
 fi
 
 if [ $manual_translations_changed = true ] ; then
-    fill_translations_map 'manual' "$prev_translations_file" "$new_translations_file"
+    echo "`date`: [INFO] Indexing manual translations"
+    time fill_translations_map 'manual' "$prev_translations_file" "$new_translations_file"
 fi
 
 base_file_lines=`echo "$base_file_content" | wc -l`
@@ -247,14 +271,14 @@ IFS="$OIFS"
 for language in ${langs[@]}; do
     file="$langs_path/$language.lproj/$file_to_translate"
     echo ''
-    echo "Processing $file"
+    echo "`date`: [INFO] Processing $file"
     file_lines=`grep -c "=" "$file"`
     new_strings=true
 
     if [ $file_lines -eq $base_file_lines ]; then
         new_strings=false
     else
-        echo "$base_file_lines lines in base file, $file_lines lines in $file"
+        echo "`date`: [INFO] $base_file_lines lines in base file, $file_lines lines in $file"
 
         if [ $file_lines -gt $base_file_lines ]; then
             file_content=`grep "=" "$file"`
@@ -313,8 +337,17 @@ for language in ${langs[@]}; do
             auto_translation=`get_translation 'auto' "$id" "$language"`
 
             if [ -z "$auto_translation" ]; then
-                echo "Getting auto-translations for \"$id\""
+                echo "`date`: [INFO] Getting auto-translations for \"$id\""
                 localisation="`translate_string \"$id\" \"$base_value\"`"
+                translation_code="`echo $?`"
+                if [ ! $translation_code -eq 0 ]; then
+                    echo "`date`: [WARN] $localisation"
+                    localisation=""
+                    if [ $translation_code -eq 42 ]; then
+                        exit 42
+                    fi
+                fi
+
                 [ -n "$localisation" ] && fill_translations_map 'auto' "$localisation"
                 auto_translation=`get_translation 'auto' "$id" "$language"`
 
