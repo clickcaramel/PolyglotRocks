@@ -56,7 +56,7 @@ To use PolyglotRocks in your Xcode project, add the following command to the bui
 To run PolyglotRocks on your local machine with Xcode, you can use a special script via cURL. To do this, add the following code to a build phase in your Xcode project:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" <your_token>
+/bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token>
 ```
 
 This script will download the latest version of PolyglotRocks if needed and then will execute it at every build of your project using Xcode.
@@ -66,7 +66,7 @@ This script will download the latest version of PolyglotRocks if needed and then
 Alternatively, you can run PolyglotRocks on your local machine as a regular tool in the terminal. Keep in mind that in this case you probably need to manually set the `PRODUCT_BUNDLE_IDENTIFIER` environment variable that Xcode usually deals with. For example, like this:
 
 ```bash
-PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id> /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" <your_token> <path_to_files>
+PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id> /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> <path_to_files>
 ```
 
 > `<path_to_files>` is an optional parameter here.

@@ -70,5 +70,5 @@ if [ "$INSTALL" == true ]; then
 else
     echo "Automatically starting PolyglotRocks..."
     echo
-    bash $SCRIPT_INSTALL_PATH "$@"
+    $SCRIPT_INSTALL_PATH "$@"
 fi
