@@ -23,7 +23,7 @@ if [ $? -eq 0 ]; then
         echo ${translations[`echo $1_$2_$3`]}
     }
 else
-    warning Your Bash version does not support associative arrays, indexing will be slow, we recommend updating your Bash to the newer version.
+    warning "Your Bash version does not support associative arrays, indexing will be slow, we recommend updating your Bash to the newer version."
     translation_key() {
         echo `calc_md5 "$1|~|$2"`
     }
@@ -48,7 +48,7 @@ if [[ $(uname -s) == "Darwin" ]]; then
 elif [[ $(uname -s) == "Linux" ]]; then
     is_mac_os=false
 else
-    error Operating system is not supported
+    error "Operating system is not supported"
     exit 1
 fi
 
@@ -224,7 +224,7 @@ fi
 
 [ -f "$prev_translations_file" ] || echo "{}" > "$prev_translations_file"
 
-info Downloading translations from the server
+info "Downloading translations from the server"
 
 api_response=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings?manual=true" -s)
 
@@ -233,45 +233,45 @@ case `echo $api_response | jq -r '.message?'` in
         echo "Invalid tenant token"
         exit 1;;
     'Not found')
-        info $product_id is not found, creating one with the following languages: $all_languages
+        info "$product_id is not found, creating one with the following languages: $all_languages"
         update_languages "$all_languages"
 esac
 
 if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
-    info Saving the downloaded translations to $new_translations_file
+    info "Saving the downloaded translations to $new_translations_file"
     (response_to_js_map "$api_response") > $new_translations_file
 fi
 
 if [ -f "$backup_langs_file" ]; then
     if [ -n "`diff <(echo \"$all_languages\") $backup_langs_file`" ]; then
-        info Updating $product_id languages, new set of languages is $all_languages
+        info "Updating $product_id languages, new set of languages is $all_languages"
         update_languages "$all_languages"
     fi
 else
     existing_langs=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id" -s | jq -r '.languages[]?')
 
     if [[ -z "$existing_langs" ]] || [[ -n "`diff <(echo \"$all_languages\") <(echo \"$existing_langs\" | sort)`" ]]; then
-        info Updating $product_id languages, new set of languages is $all_languages
+        info "Updating $product_id languages, new set of languages is $all_languages"
         update_languages "$all_languages"
     else
         echo "$all_languages" > "$backup_langs_file"
     fi
 fi
 
-info Loading current and previous translations into memory from $prev_translations_file and $new_translations_file
+info "Loading current and previous translations into memory from $prev_translations_file and $new_translations_file"
 new_translations_data=`cat $new_translations_file`
 prev_translations_data=`cat $prev_translations_file`
 
 if [ "`calc_md5 \"$new_translations_data\"`" != "`calc_md5 \"$prev_translations_data\"`" ] || [ "$FORCE_REFRESH" = "true" ] ; then
-    info Manual translations changed
+    info "Manual translations changed"
     manual_translations_changed=true
 else
-    info Manual translations have not changed
+    info "Manual translations have not changed"
     manual_translations_changed=false
 fi
 
 if [ $manual_translations_changed = true ] ; then
-    info Indexing manual translations
+    info "Indexing manual translations"
     fill_translations_map 'manual' "$prev_translations_file" "$new_translations_file"
 fi
 
@@ -288,7 +288,7 @@ IFS="$OIFS"
 for language in ${langs[@]}; do
     file="$langs_path/$language.lproj/$file_to_translate"
     echo ''
-    info Processing $file
+    info "Processing $file"
     file_lines=`get_strings_from_file $file | wc -l`
     new_strings=true
     content_diff_reverse=''
@@ -370,7 +370,7 @@ for language in ${langs[@]}; do
                 localisation="`translate_string \"$id\" \"$base_value\"`"
                 translation_code="`echo $?`"
                 if [ ! $translation_code -eq 0 ]; then
-                    warning $localisation
+                    warning "$localisation"
                     localisation=""
                     if [ $translation_code -eq 42 ]; then
                         exit 42
