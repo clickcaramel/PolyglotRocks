@@ -167,3 +167,14 @@ test_translate_equal_strings_when_equal_line_count() {
     assert_equals ' "Annuler";' "$translation"
     assert_equals ' "custom-translation";' "$custom_translation"
 }
+
+test_remove_duplicates_from_lang_files() {
+    path="$translations_path/fr.lproj/$file_name";
+    echo "$initial_data" > $path
+    echo '"4K" = "4K";' >> $path
+    echo '"4K" = "4K";' >> $path
+    output=`$script $tenant_token ../$app_name`
+    echo "$output"
+    translations_count=`grep -c '4K' $path`
+    assert_equals 1 "$translations_count"
+}

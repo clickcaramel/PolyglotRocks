@@ -43,7 +43,7 @@ fi
 
 if [ -n "$product_id" ]; then
     branch=`git rev-parse --abbrev-ref HEAD 2> /dev/null`
-    
+
     if [ -z "$branch" ]; then
         if [ -n "$GITHUB_HEAD_REF" ]; then
             branch="$GITHUB_HEAD_REF"
@@ -51,7 +51,7 @@ if [ -n "$product_id" ]; then
             branch="$RANDOM"
         fi
     fi
-    
+
     branch=`echo "$branch" | tr -d '/()'`
     backup_path="$backup_root/$product_id/$branch"
     backup_file='.last_used_manual_translations'
@@ -266,12 +266,11 @@ for language in ${langs[@]}; do
         echo "$base_file_lines lines in base file, $file_lines lines in $file"
 
         if [ $file_lines -gt $base_file_lines ]; then
-            file_content=`grep "=" "$file"`
+            file_content=`grep "=" "$file" | grep -v "^//"`
             duplicates=`find_duplicates "$file_content"`
 
             if [ -n "$duplicates" ] ; then
-                echo "Found duplicates in $file"
-                echo $duplicates
+                echo "$file_content" | sort | uniq > $file
             fi
         fi
     fi
