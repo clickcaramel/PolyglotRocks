@@ -57,7 +57,7 @@ setup() {
 }
 
 test_token_not_specified() {
-    assert_equals "`$script`" 'Tenant token is required as a first argument'
+    assert_equals "`$script | grep 'Tenant token is required as a first argument'`" 'Tenant token is required as a first argument'
 }
 
 test_product_id_not_specified() {
