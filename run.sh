@@ -38,7 +38,7 @@ fi
 
 if [ "$NEED_TO_DOWNLOAD" == true ]; then
     curl -s "https://raw.githubusercontent.com/clickcaramel/PolyglotRocks/main/bin/polyglot" -o "$SCRIPT_INSTALL_PATH"
-    curl -s "https://github.com/clickcaramel/PolyglotRocks/raw/main/bin/lib/$JQ_BINARY_NAME" -o "$JQ_INSTALL_PATH"
+    curl -s "https://raw.githubusercontent.com/clickcaramel/PolyglotRocks/main/bin/lib/$JQ_BINARY_NAME" -o "$JQ_INSTALL_PATH"
 fi
 
 chmod +x "$SCRIPT_INSTALL_PATH"
