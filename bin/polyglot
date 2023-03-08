@@ -378,7 +378,7 @@ for language in ${langs[@]}; do
                 auto_translation=`get_translation 'auto' "$id" "$language"`
 
                 if [ -z "$auto_translation" ]; then
-                    echo "Failed to get auto-translations"
+                    error "Failed to get auto-translations, $localisation"
                     continue;
                 fi
             fi
