@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: clickcaramel/PolyglotRocks@v0.1.6
+      - uses: clickcaramel/PolyglotRocks@v0.1.7
         with:
           path: <path_to_project>
           token: <your_token>
@@ -86,7 +86,7 @@ jobs:
 PolyglotRocks can also be used with Docker. To get started, pull the image from the repository by running the following command:
 
 ```bash
-docker pull ghcr.io/clickcaramel/polyglot-rocks:0.1.6
+docker pull ghcr.io/clickcaramel/polyglot-rocks:0.1.7
 ```
 
 Once you have pulled the image, you can run a Docker container with the following command:
@@ -96,7 +96,7 @@ docker run --rm \
     --env "TOKEN=<your_token>" \
     --env "PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id>" \
     --volume "<path_to_project>:/home/polyglot/target" \
-    ghcr.io/clickcaramel/polyglot-rocks:0.1.6
+    ghcr.io/clickcaramel/polyglot-rocks:0.1.7
 ```
 
 > Replace `<your_token>`, `<your_bundle_id>`, and `<path_to_project>` with your API token, product bundle identifier, and the path to your Xcode project, respectively.
