@@ -22,7 +22,7 @@ runs:
   steps:
     - uses: actions/checkout@v2
     - name: pull image
-      run: docker pull ghcr.io/clickcaramel/polyglot-rocks:0.1.5
+      run: docker pull ghcr.io/clickcaramel/polyglot-rocks:0.1.8
       shell: bash
     - name: run polyglot
       run: |
@@ -31,5 +31,5 @@ runs:
           --env "PRODUCT_BUNDLE_IDENTIFIER=${{ inputs.bundle_id}}" \
           --env "API_URL=${{ inputs.api_url }}" \
           --volume "$(pwd)/${{ inputs.path }}:/home/polyglot/target" \
-          ghcr.io/clickcaramel/polyglot-rocks:0.1.5
+          ghcr.io/clickcaramel/polyglot-rocks:0.1.8
       shell: bash
