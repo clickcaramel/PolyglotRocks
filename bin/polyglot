@@ -276,6 +276,7 @@ if [ $manual_translations_changed = true ] ; then
 fi
 
 base_file_lines=`echo "$base_file_content" | wc -l`
+base_file_str_ids=`echo "$base_file_content" | cut -d '=' -f 1`
 new_languages=`echo "$all_languages" | sed -e "s/$base_language//"`
 # split multiline string into array
 OIFS="$IFS"
@@ -309,9 +310,22 @@ for language in ${langs[@]}; do
 
         if [ $file_lines -gt $base_file_lines ]; then
             duplicates=`find_duplicates "$file_content"`
+            is_content_changed=false
 
-            if [ -n "$duplicates" ] ; then
-                echo "$file_content" | sort | uniq > $file
+            if [ -n "$duplicates" ]; then
+                is_content_changed=true
+                file_content=`echo "$file_content" | sort | uniq`
+            fi
+
+            deleted_strings=`echo "$file_content" | cut -d '=' -f 1 | grep -xv "$base_file_str_ids"`
+
+            if [ -n "$deleted_strings" ]; then
+                is_content_changed=true
+                file_content=`echo "$file_content" | grep -vw "$deleted_strings"`
+            fi
+
+            if [ $is_content_changed = true ]; then
+                echo "$file_content" > $file
             fi
         fi
     fi
