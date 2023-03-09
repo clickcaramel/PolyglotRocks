@@ -8,10 +8,11 @@ other_source='Other.strings'
 tenant_token='f233f89a-7868-4e53-854c-9fa60f5b283e'
 translations_path="../$app_name/Extra"
 api_url='https://api.dev.polyglot.rocks'
+api_url=${API_URL:-$api_url}
 product_id='test.bash.app'
 base_file="$translations_path/en.lproj/$file_name"
 initial_data='"Cancel" = "Cancel";
-// some comment
+// some comment = 0
 "Saved successfully" = "Saved successfully";
 "4K" = "4K";
 "Loading" = "Loading...";'
@@ -166,4 +167,14 @@ test_translate_equal_strings_when_equal_line_count() {
     custom_translation=`grep 'Loading' $path | cut -d '=' -f 2`
     assert_equals ' "Annuler";' "$translation"
     assert_equals ' "custom-translation";' "$custom_translation"
+}
+
+test_remove_duplicates_from_lang_files() {
+    path="$translations_path/fr.lproj/$file_name";
+    echo "$initial_data" > $path
+    echo '"4K" = "4K";' >> $path
+    echo '"4K" = "4K";' >> $path
+    output=`$script $tenant_token ../$app_name`
+    translations_count=`grep -c '4K' $path`
+    assert_equals 1 "$translations_count"
 }
