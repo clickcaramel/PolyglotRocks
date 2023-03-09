@@ -289,15 +289,16 @@ for language in ${langs[@]}; do
     file="$langs_path/$language.lproj/$file_to_translate"
     echo ''
     info "Processing $file"
-    file_lines=`get_strings_from_file $file | wc -l`
+    file_content=`get_strings_from_file $file`
+    file_lines=`echo "$file_content" | wc -l`
     new_strings=true
     content_diff_reverse=''
 
     if [ $file_lines -eq $base_file_lines ]; then
-        content_diff=`diff <(echo "$base_file_content") <(get_strings_from_file $file)`
+        content_diff=`diff <(echo "$base_file_content") <(echo "$file_content")`
 
         if [ -n "$content_diff" ]; then
-            content_diff_reverse=`grep -F -x -f $base_file $file | grep -v "^//"`
+            content_diff_reverse=`echo "$file_content" | grep -F -x "$base_file_content"`
 
             if [ -z "$content_diff_reverse" ]; then
                 new_strings=false
@@ -307,7 +308,6 @@ for language in ${langs[@]}; do
         info "$base_file_lines lines in base file, $file_lines lines in $file"
 
         if [ $file_lines -gt $base_file_lines ]; then
-            file_content=`get_strings_from_file $file`
             duplicates=`find_duplicates "$file_content"`
 
             if [ -n "$duplicates" ] ; then
