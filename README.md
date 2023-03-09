@@ -89,8 +89,15 @@ jobs:
     steps:
       # 1. Checkout latest version of your changes.
       - uses: actions/checkout@v3
+      # (optional) Keep this step if you need to commit changes to the git history.
+      - name: Setup Git
+        run: |
+          git config --local user.name "PolyglotRocks"
+          git config --local user.email "support@4spaces.company"
+          git fetch --unshallow
+          git checkout ${GITHUB_HEAD_REF}
       # 2. Run PolyglotRocks
-      - uses: clickcaramel/PolyglotRocks@v0.1.8
+      - uses: clickcaramel/PolyglotRocks@main
         with:
           # The API token provided by PolyglotRocks.
           token: <your_token>
@@ -98,16 +105,19 @@ jobs:
           bundle_id: <your_bundle_id>
           # The path to the directory to search files to be localized (optional).
           path: <path_to_files>
+      # (optional) Keep this step if you need to commit changes to the git history.
+      - name: Commit Changes
+        run: |
+          git commit -a -m "chore: update translations" || echo "Nothing to commit"
+          git push ${GITHUB_HEAD_REF}
 ```
-
-**Keep in mind:** The PolyglotRocks GitHub Action does not automatically commit the changes made, so you may additionally need an extra workflow step to create a commit after the translation.
 
 ### Option 5. Docker
 
 PolyglotRocks can also be used with Docker. To get started, pull the image from the repository by running the following command:
 
 ```bash
-docker pull ghcr.io/clickcaramel/polyglot-rocks:0.1.8
+docker pull ghcr.io/clickcaramel/polyglot-rocks:latest
 ```
 
 Once you have pulled the image, you can run a Docker container with the following command:
@@ -117,7 +127,7 @@ docker run --rm \
     --env "TOKEN=<your_token>" \
     --env "PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id>" \
     --volume "<path_to_files>:/home/polyglot/target" \
-    ghcr.io/clickcaramel/polyglot-rocks:0.1.8
+    ghcr.io/clickcaramel/polyglot-rocks:latest
 ```
 
 **Keep in mind:** Docker uses absolute paths in volume mappings.
