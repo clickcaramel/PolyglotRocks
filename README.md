@@ -90,7 +90,7 @@ jobs:
       # 1. Checkout latest version of your changes.
       - uses: actions/checkout@v3
       # 2. Run PolyglotRocks
-      - uses: clickcaramel/PolyglotRocks@v0.1.7
+      - uses: clickcaramel/PolyglotRocks@v0.1.8
         with:
           # The API token provided by PolyglotRocks.
           token: <your_token>
@@ -107,7 +107,7 @@ jobs:
 PolyglotRocks can also be used with Docker. To get started, pull the image from the repository by running the following command:
 
 ```bash
-docker pull ghcr.io/clickcaramel/polyglot-rocks:0.1.7
+docker pull ghcr.io/clickcaramel/polyglot-rocks:0.1.8
 ```
 
 Once you have pulled the image, you can run a Docker container with the following command:
@@ -117,7 +117,7 @@ docker run --rm \
     --env "TOKEN=<your_token>" \
     --env "PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id>" \
     --volume "<path_to_files>:/home/polyglot/target" \
-    ghcr.io/clickcaramel/polyglot-rocks:0.1.7
+    ghcr.io/clickcaramel/polyglot-rocks:0.1.8
 ```
 
 **Keep in mind:** Docker uses absolute paths in volume mappings.
