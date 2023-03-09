@@ -178,3 +178,13 @@ test_remove_duplicates_from_lang_files() {
     translations_count=`grep -c '4K' $path`
     assert_equals 1 "$translations_count"
 }
+
+test_remove_deleted_strings_from_lang_files() {
+    path="$translations_path/fr.lproj/$file_name";
+    removed_lines='"DELETED" = "deleted str";
+"Unused" = "DELETED";'
+    echo "$removed_lines" >> $path
+    output=`$script $tenant_token ../$app_name`
+    removed_lines_count=`grep -c "$removed_lines" $path`
+    assert_equals 0 $removed_lines_count
+}
