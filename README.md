@@ -77,10 +77,10 @@ PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id> /bin/bash -c "$(curl -fsSL https://po
 
 ### Option 4. GitHub Actions
 
-The PolyglotRocks GitHub Action allows you to easily automate the localization process for your projects in CI/CD pipeline. Here is an example workflow for using the action in your GitHub Actions:
+The PolyglotRocks GitHub Action allows you to easily automate the localization process for your projects in CI/CD pipeline. Please note that this action requires Linux-based runners, as it uses Docker under the hood. Here is an example workflow for using the action in your GitHub Actions:
 
 ```yaml
-name: Docker
+name: PolyglotRocks
 
 on:
   pull_request:
@@ -89,6 +89,7 @@ on:
 
 jobs:
   translate:
+    # PolyglotRocks GitHub Action is designed to work on Linux-based runners.
     runs-on: ubuntu-latest
     steps:
       # 1. Checkout latest version of your changes.
@@ -109,6 +110,42 @@ jobs:
           bundle_id: <your_bundle_id>
           # The path to the directory to search files to be localized (optional).
           path: <path_to_files>
+      # (optional) Keep this step if you need to commit changes to the git history.
+      - name: Commit Changes
+        run: |
+          git commit -a -m "chore: update translations" || echo "Nothing to commit"
+          git push ${GITHUB_HEAD_REF}
+```
+
+If you want to use the tool on runners with other operating systems, then you can embed its cURL version in the workflow:
+
+```yaml
+name: PolyglotRocks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  translate:
+    # You can use this option on a runner where there is no docker, but there is curl.
+    runs-on: macos-latest
+    steps:
+      # 1. Checkout latest version of your changes.
+      - uses: actions/checkout@v3
+      # (optional) Keep this step if you need to commit changes to the git history.
+      - name: Setup Git
+        run: |
+          git config --local user.name "PolyglotRocks"
+          git config --local user.email "support@4spaces.company"
+          git fetch --unshallow
+          git checkout ${GITHUB_HEAD_REF}
+      # 2. Run PolyglotRocks via cURL
+      - name: Run PolyglotRocks
+        run: |
+          export PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id>
+          /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> <path_to_files>
       # (optional) Keep this step if you need to commit changes to the git history.
       - name: Commit Changes
         run: |
