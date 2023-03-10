@@ -51,6 +51,8 @@ To use PolyglotRocks in your Xcode project, add the following command to the bui
 "${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your token>
 ```
 
+![cURL (Xcode)](.images/pods.png)
+
 ### Option 2. cURL (Xcode)
 
 To run PolyglotRocks on your local machine with Xcode, you can use a special script via cURL. To do this, add the following code to a build phase in your Xcode project:
@@ -60,6 +62,8 @@ To run PolyglotRocks on your local machine with Xcode, you can use a special scr
 ```
 
 This script will download the latest version of PolyglotRocks if needed and then will execute it at every build of your project using Xcode.
+
+![cURL (Xcode)](.images/curl_xcode.png)
 
 ### Option 3. cURL (Manually)
 
