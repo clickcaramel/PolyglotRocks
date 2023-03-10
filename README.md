@@ -6,7 +6,7 @@
   <img alt="CocoaPods" src="https://img.shields.io/cocoapods/v/PolyglotRocks">
 </p>
 
-PolyglotRocks is a tool that simplifies the localization process for your iOS mobile app. By dropping in our SDK into your project and running the build, you can get AI translations instantly and manual ones a bit later.
+PolyglotRocks is a localization tool that simplifies the translation process of your iOS mobile application. Our SDK can process `.strings` files and provide fast and accurate translations using AI-powered technology, as well as manual ones a bit later. By using PolyglotRocks, you can easily translate your app into multiple languages and reach a wider audience with minimal effort.
 
 ## Contents
 
