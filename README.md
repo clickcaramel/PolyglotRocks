@@ -19,6 +19,9 @@ PolyglotRocks is a localization tool that simplifies the translation process of 
     - [Option 3. cURL (Manually)](#option-3-curl-manually)
     - [Option 4. GitHub Actions](#option-4-github-actions)
     - [Option 5. Docker](#option-5-docker)
+  - [Support](#support)
+    - [How do I add a new localization?](#how-do-i-add-a-new-localization)
+    - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
   - [License](#license)
 
 ## Vocabulary
@@ -172,6 +175,33 @@ docker run --rm \
 ```
 
 **Keep in mind:** Docker uses absolute paths in volume mappings.
+
+## Support
+
+### How do I add a new localization?
+
+To add a new localization, follow these steps:
+
+1. Open your Xcode project.
+2. Select your project in the project navigator.
+3. Click on the "Info" tab.
+4. Scroll down to the "Localizations" section.
+5. Click on the "+" button to add a new localization.
+6. Select the language and region you want to add.
+7. Xcode will generate a new `.strings` file for the new localization.
+
+Now PolyglotRocks will see this file and translate your lines from the base language to the new one too.
+
+![Locale](.images/support/locale.png)
+
+### Should I commit translations to the git history?
+
+We suggest not committing translations to the git history to avoid conflicts between git branches. Instead, translations should be used only for deployment. Here's how to avoid committing translations:
+
+- Leave all localization files except the base one clean and do not modify them.
+- Launch PolyglotRocks only before deploying to the production or development environment, so not to commit changes to the git history.
+
+We hope this helps! If you have any other questions, please do not hesitate to ask.
 
 ## License
 
