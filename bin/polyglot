@@ -298,7 +298,6 @@ for language in ${langs[@]}; do
     file_content=`get_strings_from_file $file`
     file_lines=`echo "$file_content" | wc -l`
     new_strings=true
-    content_diff_reverse=''
     description=''
 
     if [ $file_lines -eq $base_file_lines ]; then
@@ -336,13 +335,9 @@ for language in ${langs[@]}; do
         fi
     fi
 
-    if [ $manual_translations_changed = false ]; then
-      if [ $new_strings = false ]; then
+    if [[ $manual_translations_changed = false ]] && [[ $new_strings = false ]] ; then
         echo "File $file seems to be translated already"
         continue;
-      elif [ -n "$content_diff_reverse" ]; then
-          base_file_content="$content_diff_reverse"
-      fi
     fi
 
     while read line; do
