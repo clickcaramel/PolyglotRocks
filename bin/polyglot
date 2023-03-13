@@ -74,7 +74,7 @@ tenant_token="$1"
 project_path="$2"
 product_id=$PRODUCT_BUNDLE_IDENTIFIER
 base_language='en'
-comment_regex='^[ 	]*//.*'
+comment_regex='^\s*//.*'
 
 backup_root="/tmp"
 if [ -n "$GITHUB_HEAD_REF" ]; then
@@ -281,7 +281,6 @@ fi
 base_file_lines=`echo "$base_file_content" | wc -l`
 base_file_str_ids=`echo "$base_file_content" | cut -d '=' -f 1`
 new_languages=`echo "$all_languages" | sed -e "s/$base_language//"`
-is_descr_sent=false
 
 # split multiline string into array
 OIFS="$IFS"
@@ -344,10 +343,7 @@ for language in ${langs[@]}; do
         if [ "$line" = "" ]; then
             continue;
         elif [[ "$line" =~ $comment_regex ]]; then
-            if [ $is_descr_sent = false ]; then
-                description+="\n$line"
-            fi
-
+            description+="\n$line"
             continue;
         fi
 
@@ -430,8 +426,6 @@ for language in ${langs[@]}; do
 
         description=''
     done < <(echo "$base_file_full_content")
-
-    is_descr_sent=true
 done
 
 mv "$new_translations_file" "$prev_translations_file"
