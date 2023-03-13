@@ -69,7 +69,7 @@ fi
 api_url='https://api.polyglot.rocks'
 api_url=${API_URL:-$api_url}
 
-file_to_translate="$3"
+files_to_translate="$3"
 tenant_token="$1"
 project_path="$2"
 product_id=$PRODUCT_BUNDLE_IDENTIFIER
@@ -200,9 +200,14 @@ if [ -z $product_id ] ; then
     exit 1
 fi
 
-if [ -z "$file_to_translate" ] ; then
-    file_to_translate="Localizable.strings"
+if [ -z "$files_to_translate" ] ; then
+    files_to_translate="Localizable.strings"
 fi
+
+OLDIFS=$IFS
+IFS=','
+read -ra files_to_translate <<< "$files_to_translate"
+IFS=$OLDIFS
 
 new_translations_file="$backup_root/translations.$RANDOM.json"
 echo '{}' > $new_translations_file
@@ -211,210 +216,219 @@ langs_path=`find $project_path \( -name Pods -o -name Carthage \) -prune -o -typ
 escaped_langs_path="`escape_for_sed $langs_path`"
 all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//' | sort`
 
-# checking for duplicates
-base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
-base_file_content=`get_strings_from_file $base_file`
-duplicates=`find_duplicates "$base_file_content"`
+main() {
+    file_to_translate=$1
 
-if [ -n "$duplicates" ] ; then
-    echo "Found duplicates in $base_file"
-    echo $duplicates
-    exit 43
-fi
+    # checking for duplicates
+    base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
+    base_file_content=`get_strings_from_file $base_file`
+    duplicates=`find_duplicates "$base_file_content"`
 
-[ -f "$prev_translations_file" ] || echo "{}" > "$prev_translations_file"
-
-info "Downloading translations from the server"
-
-api_response=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings?manual=true" -s)
-
-case `echo $api_response | jq -r '.message?'` in
-    'Not authorised')
-        echo "Invalid tenant token"
-        exit 1;;
-    'Not found')
-        info "$product_id is not found, creating one with the following languages: $all_languages"
-        update_languages "$all_languages"
-esac
-
-if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
-    info "Saving the downloaded translations to $new_translations_file"
-    (response_to_js_map "$api_response") > $new_translations_file
-fi
-
-if [ -f "$backup_langs_file" ]; then
-    if [ -n "`diff <(echo \"$all_languages\") $backup_langs_file`" ]; then
-        info "Updating $product_id languages, new set of languages is $all_languages"
-        update_languages "$all_languages"
+    if [ -n "$duplicates" ] ; then
+        echo "Found duplicates in $base_file"
+        echo $duplicates
+        exit 43
     fi
-else
-    existing_langs=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id" -s | jq -r '.languages[]?')
 
-    if [[ -z "$existing_langs" ]] || [[ -n "`diff <(echo \"$all_languages\") <(echo \"$existing_langs\" | sort)`" ]]; then
-        info "Updating $product_id languages, new set of languages is $all_languages"
-        update_languages "$all_languages"
-    else
-        echo "$all_languages" > "$backup_langs_file"
+    [ -f "$prev_translations_file" ] || echo "{}" > "$prev_translations_file"
+
+    info "Downloading translations from the server"
+
+    api_response=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings?manual=true" -s)
+
+    case `echo $api_response | jq -r '.message?'` in
+        'Not authorised')
+            echo "Invalid tenant token"
+            exit 1;;
+        'Not found')
+            info "$product_id is not found, creating one with the following languages: $all_languages"
+            update_languages "$all_languages"
+    esac
+
+    if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
+        info "Saving the downloaded translations to $new_translations_file"
+        (response_to_js_map "$api_response") > $new_translations_file
     fi
-fi
 
-info "Loading current and previous translations into memory from $prev_translations_file and $new_translations_file"
-new_translations_data=`cat $new_translations_file`
-prev_translations_data=`cat $prev_translations_file`
-
-if [ "`calc_md5 \"$new_translations_data\"`" != "`calc_md5 \"$prev_translations_data\"`" ] || [ "$FORCE_REFRESH" = "true" ] ; then
-    info "Manual translations changed"
-    manual_translations_changed=true
-else
-    info "Manual translations have not changed"
-    manual_translations_changed=false
-fi
-
-if [ $manual_translations_changed = true ] ; then
-    info "Indexing manual translations"
-    fill_translations_map 'manual' "$prev_translations_file" "$new_translations_file"
-fi
-
-base_file_lines=`echo "$base_file_content" | wc -l`
-base_file_str_ids=`echo "$base_file_content" | cut -d '=' -f 1`
-new_languages=`echo "$all_languages" | sed -e "s/$base_language//"`
-# split multiline string into array
-OIFS="$IFS"
-IFS='
-'
-IFS=${IFS:0:1}
-langs=( $new_languages )
-IFS="$OIFS"
-
-for language in ${langs[@]}; do
-    file="$langs_path/$language.lproj/$file_to_translate"
-    echo ''
-    info "Processing $file"
-    file_content=`get_strings_from_file $file`
-    file_lines=`echo "$file_content" | wc -l`
-    new_strings=true
-    content_diff_reverse=''
-
-    if [ $file_lines -eq $base_file_lines ]; then
-        content_diff=`diff <(echo "$base_file_content") <(echo "$file_content")`
-
-        if [ -n "$content_diff" ]; then
-            content_diff_reverse=`echo "$file_content" | grep -F -x "$base_file_content"`
-
-            if [ -z "$content_diff_reverse" ]; then
-                new_strings=false
-            fi
+    if [ -f "$backup_langs_file" ]; then
+        if [ -n "`diff <(echo \"$all_languages\") $backup_langs_file`" ]; then
+            info "Updating $product_id languages, new set of languages is $all_languages"
+            update_languages "$all_languages"
         fi
     else
-        info "$base_file_lines lines in base file, $file_lines lines in $file"
+        existing_langs=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id" -s | jq -r '.languages[]?')
 
-        if [ $file_lines -gt $base_file_lines ]; then
-            duplicates=`find_duplicates "$file_content"`
-            is_content_changed=false
-
-            if [ -n "$duplicates" ]; then
-                is_content_changed=true
-                file_content=`echo "$file_content" | sort | uniq`
-            fi
-
-            deleted_strings=`echo "$file_content" | cut -d '=' -f 1 | grep -xv "$base_file_str_ids"`
-
-            if [ -n "$deleted_strings" ]; then
-                is_content_changed=true
-                file_content=`echo "$file_content" | grep -vw "$deleted_strings"`
-            fi
-
-            if [ $is_content_changed = true ]; then
-                echo "$file_content" > $file
-            fi
+        if [[ -z "$existing_langs" ]] || [[ -n "`diff <(echo \"$all_languages\") <(echo \"$existing_langs\" | sort)`" ]]; then
+            info "Updating $product_id languages, new set of languages is $all_languages"
+            update_languages "$all_languages"
+        else
+            echo "$all_languages" > "$backup_langs_file"
         fi
     fi
 
-    if [ $manual_translations_changed = false ]; then
-      if [ $new_strings = false ]; then
-        echo "File $file seems to be translated already"
-        continue;
-      elif [ -n "$content_diff_reverse" ]; then
-          base_file_content="$content_diff_reverse"
-      fi
+    info "Loading current and previous translations into memory from $prev_translations_file and $new_translations_file"
+    new_translations_data=`cat $new_translations_file`
+    prev_translations_data=`cat $prev_translations_file`
+
+    if [ "`calc_md5 \"$new_translations_data\"`" != "`calc_md5 \"$prev_translations_data\"`" ] || [ "$FORCE_REFRESH" = "true" ] ; then
+        info "Manual translations changed"
+        manual_translations_changed=true
+    else
+        info "Manual translations have not changed"
+        manual_translations_changed=false
     fi
 
-    while read line; do
-        if [ "$line" != "" ]; then
-            id=`echo $line | cut -d '=' -f 1`
-            id=`echo ${id//\"}`
-            base_value=`echo $line | cut -d '=' -f 2`
-            base_value=`echo ${base_value//\"}`
-            base_value=`echo ${base_value//;}`
-            manual_translation=`get_translation 'manual' "$id" "$language"`
-            old_record="\"$id\" = "
-            escaped_old_record=`escape_for_grep "$old_record"`
+    if [ $manual_translations_changed = true ] ; then
+        info "Indexing manual translations"
+        fill_translations_map 'manual' "$prev_translations_file" "$new_translations_file"
+    fi
 
-            if [ -n "$manual_translation" ]; then
-                new_record="\"$id\" = \"$manual_translation\";"
-                escaped_new_record=`escape_for_grep "$new_record"`
+    base_file_lines=`echo "$base_file_content" | wc -l`
+    base_file_str_ids=`echo "$base_file_content" | cut -d '=' -f 1`
+    new_languages=`echo "$all_languages" | sed -e "s/$base_language//"`
+    # split multiline string into array
+    OIFS="$IFS"
+    IFS='
+    '
+    IFS=${IFS:0:1}
+    langs=( $new_languages )
+    IFS="$OIFS"
 
-                if [ "`grep \"$escaped_new_record\" $file`" ]; then
-                    continue;
-                elif [ "`grep \"$escaped_old_record\" $file`" ]; then
-                    escaped_old_record=`escape_for_sed "$old_record"`
-                    escaped_new_record=`escape_for_sed "$new_record"`
-                    sed -i '' -e "s/$escaped_old_record.*/$escaped_new_record/" "$file"
-                else
-                    echo "$new_record" >> $file
-                fi
+    for language in ${langs[@]}; do
+        file="$langs_path/$language.lproj/$file_to_translate"
+        echo ''
+        info "Processing $file"
+        file_content=`get_strings_from_file $file`
+        file_lines=`echo "$file_content" | wc -l`
+        new_strings=true
+        content_diff_reverse=''
 
-                continue;
-            fi
+        if [ $file_lines -eq $base_file_lines ]; then
+            content_diff=`diff <(echo "$base_file_content") <(echo "$file_content")`
 
-            is_new_translation=true
+            if [ -n "$content_diff" ]; then
+                content_diff_reverse=`echo "$file_content" | grep -F -x "$base_file_content"`
 
-            if [ "`grep \"$escaped_old_record\" $file`" ]; then
-                if [ -z "`grep -Fx \"$line\" $file`" ]; then
-                    continue;
-                else
-                    is_new_translation=false
+                if [ -z "$content_diff_reverse" ]; then
+                    new_strings=false
                 fi
             fi
+        else
+            info "$base_file_lines lines in base file, $file_lines lines in $file"
 
-            auto_translation=`get_translation 'auto' "$id" "$language"`
+            if [ $file_lines -gt $base_file_lines ]; then
+                duplicates=`find_duplicates "$file_content"`
+                is_content_changed=false
 
-            if [ -z "$auto_translation" ]; then
-                info "Getting auto-translations for \"$id\""
-                localisation="`translate_string \"$id\" \"$base_value\"`"
-                translation_code="`echo $?`"
-                if [ ! $translation_code -eq 0 ]; then
-                    warning "$localisation"
-                    localisation=""
-                    if [ $translation_code -eq 42 ]; then
-                        exit 42
+                if [ -n "$duplicates" ]; then
+                    is_content_changed=true
+                    file_content=`echo "$file_content" | sort | uniq`
+                fi
+
+                deleted_strings=`echo "$file_content" | cut -d '=' -f 1 | grep -xv "$base_file_str_ids"`
+
+                if [ -n "$deleted_strings" ]; then
+                    is_content_changed=true
+                    file_content=`echo "$file_content" | grep -vw "$deleted_strings"`
+                fi
+
+                if [ $is_content_changed = true ]; then
+                    echo "$file_content" > $file
+                fi
+            fi
+        fi
+
+        if [ $manual_translations_changed = false ]; then
+        if [ $new_strings = false ]; then
+            echo "File $file seems to be translated already"
+            continue;
+        elif [ -n "$content_diff_reverse" ]; then
+            base_file_content="$content_diff_reverse"
+        fi
+        fi
+
+        while read line; do
+            if [ "$line" != "" ]; then
+                id=`echo $line | cut -d '=' -f 1`
+                id=`echo ${id//\"}`
+                base_value=`echo $line | cut -d '=' -f 2`
+                base_value=`echo ${base_value//\"}`
+                base_value=`echo ${base_value//;}`
+                manual_translation=`get_translation 'manual' "$id" "$language"`
+                old_record="\"$id\" = "
+                escaped_old_record=`escape_for_grep "$old_record"`
+
+                if [ -n "$manual_translation" ]; then
+                    new_record="\"$id\" = \"$manual_translation\";"
+                    escaped_new_record=`escape_for_grep "$new_record"`
+
+                    if [ "`grep \"$escaped_new_record\" $file`" ]; then
+                        continue;
+                    elif [ "`grep \"$escaped_old_record\" $file`" ]; then
+                        escaped_old_record=`escape_for_sed "$old_record"`
+                        escaped_new_record=`escape_for_sed "$new_record"`
+                        sed -i '' -e "s/$escaped_old_record.*/$escaped_new_record/" "$file"
+                    else
+                        echo "$new_record" >> $file
+                    fi
+
+                    continue;
+                fi
+
+                is_new_translation=true
+
+                if [ "`grep \"$escaped_old_record\" $file`" ]; then
+                    if [ -z "`grep -Fx \"$line\" $file`" ]; then
+                        continue;
+                    else
+                        is_new_translation=false
                     fi
                 fi
 
-                [ -n "$localisation" ] && fill_translations_map 'auto' "$localisation"
                 auto_translation=`get_translation 'auto' "$id" "$language"`
 
                 if [ -z "$auto_translation" ]; then
-                    error "Failed to get auto-translations, $localisation"
-                    continue;
+                    info "Getting auto-translations for \"$id\""
+                    localisation="`translate_string \"$id\" \"$base_value\"`"
+                    translation_code="`echo $?`"
+                    if [ ! $translation_code -eq 0 ]; then
+                        warning "$localisation"
+                        localisation=""
+                        if [ $translation_code -eq 42 ]; then
+                            exit 42
+                        fi
+                    fi
+
+                    [ -n "$localisation" ] && fill_translations_map 'auto' "$localisation"
+                    auto_translation=`get_translation 'auto' "$id" "$language"`
+
+                    if [ -z "$auto_translation" ]; then
+                        error "Failed to get auto-translations, $localisation"
+                        continue;
+                    fi
+                fi
+
+                if [ $is_new_translation = true ]; then
+                    echo "\"$id\" = \"$auto_translation\";" >> $file
+                else
+                    old_value=`escape_for_sed "$line"`
+                    new_line="\"$id\" = \"$auto_translation\";"
+
+                    if [ "$base_value" = "$auto_translation" ]; then
+                        new_line="$new_line //"
+                    fi
+
+                    new_value=`escape_for_sed "$new_line"`
+                    sed -i '' -e "s/$old_value/$new_value/" "$file"
                 fi
             fi
+        done < <(echo "$base_file_content")
+    done
+}
 
-            if [ $is_new_translation = true ]; then
-                echo "\"$id\" = \"$auto_translation\";" >> $file
-            else
-                old_value=`escape_for_sed "$line"`
-                new_line="\"$id\" = \"$auto_translation\";"
-
-                if [ "$base_value" = "$auto_translation" ]; then
-                    new_line="$new_line //"
-                fi
-
-                new_value=`escape_for_sed "$new_line"`
-                sed -i '' -e "s/$old_value/$new_value/" "$file"
-            fi
-        fi
-    done < <(echo "$base_file_content")
+for file in "${files_to_translate[@]}"
+do
+  main "$file"
 done
 
 mv "$new_translations_file" "$prev_translations_file"
