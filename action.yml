@@ -1,9 +1,9 @@
-name: PolyglotRocks
-description: "This action automates Xcode project localization using the PolyglotRocks tool for efficient and automated translations in your CI/CD pipeline."
+name: Polyglot
+description: "It automates Xcode project localization using the Polyglot tool"
 
 inputs:
   token:
-    description: "The API token provided by PolyglotRocks."
+    description: "The API token provided by Polyglot."
     required: true
   bundle_id:
     description: "The product bundle identifier of the Xcode project."
