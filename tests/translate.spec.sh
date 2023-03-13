@@ -202,7 +202,7 @@ test_use_complex_comment() {
     echo "$initial_data${NL}$complex_comment${NL}$str" > $path
     output=`$script $tenant_token ../$app_name`
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/complex_str" -s | jq -r '.description'`
-    descr_from_comment=`echo "$complex_comment" | sed -e 's/\s*\/\/\s*//g'`
+    descr_from_comment=`echo "$complex_comment" | sed -e 's/\\s*\/\/\\s*//g'`
 
     assert_equals 3 `echo "$description" | wc -l`
     assert_equals "$descr_from_comment" "$description"
