@@ -21,7 +21,7 @@ runs:
   using: "composite"
   steps:
     - name: pull image
-      run: docker pull ghcr.io/clickcaramel/polyglot-rocks:0.1.8
+      run: docker pull ghcr.io/clickcaramel/polyglot-rocks:0.1.9
       shell: bash
     - name: run polyglot
       run: |
@@ -30,5 +30,5 @@ runs:
           --env "PRODUCT_BUNDLE_IDENTIFIER=${{ inputs.bundle_id}}" \
           --env "API_URL=${{ inputs.api_url }}" \
           --volume "$(pwd)/${{ inputs.path }}:/home/polyglot/target" \
-          ghcr.io/clickcaramel/polyglot-rocks:0.1.8
+          ghcr.io/clickcaramel/polyglot-rocks:0.1.9
       shell: bash
