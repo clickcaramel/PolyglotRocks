@@ -28,12 +28,12 @@ Polyglot is a localization tool that simplifies the translation process of your 
 
 To use Polyglot, you will need or may need the following parameters:
 
-| Term | Description | Where to get |
-| --- | --- | --- |
-| `<your_token>` | The API token provided by Polyglot. | Use the [official website](https://polyglot.rocks) to generate the API token for your tariff plan. |
-| `<your_bundle_id>` | The product bundle identifier of the Xcode project. | 1) Open your Xcode project 2) In the Project Navigator select the project itself 3) Select the main project target 4) In the `General` tab a bundle identifier is under the `Identity` section. |
-| `<workdir_path>` | The path to the directory to search files to be localized. | The path to the place where the tool will recursively search for your localization files, so you can specify any path along which it will be convenient to search for them. However, keep in mind that the path should not point to a directory containing several projects at once. |
-| `<files_to_translate>` | A comma-separated list of file names to translate. | Here you need to list the file names for translation. For example, it can be `"Localizable.strings"` or `"Localizable.strings,InfoPlist.strings"`. Keep in mind that these are names, not paths. |
+| Term | Description | Where to get | Default value |
+| --- | --- | --- | --- |
+| `<your_token>` | The API token provided by Polyglot. | Use the [official website](https://polyglot.rocks) to generate the API token for your tariff plan. | — |
+| `<your_bundle_id>` | The product bundle identifier of the Xcode project. | 1) Open your Xcode project 2) In the Project Navigator select the project itself 3) Select the main project target 4) In the `General` tab a bundle identifier is under the `Identity` section. | — |
+| `<workdir_path>` | The path to the directory to search files to be localized. | The path to the place where the tool will recursively search for your localization files, so you can specify any path along which it will be convenient to search for them. However, keep in mind that the path should not point to a directory containing several projects at once. | The directory from which the script is run. When running from the Xcode build phase, it takes the value of the `$PROJECT_DIR` environment variable. |
+| `<files_to_translate>` | A comma-separated list of file names to translate. | Here you need to list the file names for translation. For example, it can be `"Localizable.strings"` or `"Localizable.strings,InfoPlist.strings"`. Keep in mind that these are names, not paths. | `Localizable.strings` |
 
 These terms will be used further in integration options.
 
@@ -178,9 +178,12 @@ docker run --rm \
     ghcr.io/clickcaramel/polyglot-rocks:latest
 ```
 
-**Keep in mind:** Docker uses absolute paths in volume mappings.
-
 > `<files_to_translate>` is an optional parameter here.
+
+**Keep in mind:**
+
+1. Docker uses absolute paths in volume mappings.
+2. You cannot omit the `<workdir_path>` parameter here, since you must explicitly specify volume for Docker.
 
 ## Support
 
