@@ -12,8 +12,8 @@ api_url=${API_URL:-$api_url}
 product_id='test.bash.app'
 base_file="$translations_path/en.lproj/$file_name"
 initial_data='"Cancel" = "Cancel";
-// some comment = 0
 "Saved successfully" = "Saved successfully";
+// some comment = 0
 "4K" = "4K";
 "Loading" = "Loading...";'
 
@@ -100,9 +100,12 @@ test_auto_translation() {
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     custom_translation=`grep 'Loading' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     marked_translation=`grep '4K' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
-    assert_equals $translation '"Abbrechen";'
+    description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/4K" -s | jq -r '.description'`
+
+    assert_equals '"Abbrechen";' $translation
     assert_equals ' "4K"; //' "$marked_translation"
-    assert_equals $custom_translation '"custom-translation";'
+    assert_equals '"custom-translation";' $custom_translation
+    assert_equals 'some comment = 0' "$description"
 }
 
 test_load_manual_translations() {
@@ -129,7 +132,8 @@ test_translations_from_other_file() {
 
     output=`$script $tenant_token -p ../$app_name -f $other_source`
     translation=`grep 'Now' $translations_path/fr.lproj/$other_source | cut -d '=' -f 2`
-    assert_equals "$translation" ' "Maintenant";'
+
+    assert_equals ' "Maintenant";' "$translation"
 }
 
 test_do_nothing_without_updates() {
@@ -187,4 +191,20 @@ test_remove_deleted_strings_from_lang_files() {
     output=`$script $tenant_token -p ../$app_name`
     removed_lines_count=`grep -c "$removed_lines" $path`
     assert_equals 0 $removed_lines_count
+}
+
+test_use_complex_comment() {
+    path="$translations_path/en.lproj/$file_name";
+    NL=$'\n'
+    complex_comment='// some text
+   //complex comment
+	//  serious case'
+    str='"complex_str" = "complex string";'
+    echo "$initial_data${NL}$complex_comment${NL}$str" > $path
+    output=`$script $tenant_token -p ../$app_name`
+    description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/complex_str" -s | jq -r '.description'`
+    descr_from_comment=`echo "$complex_comment" | sed -e 's/[ 	]*\/\/[ ]*//g'`
+
+    assert_equals 3 `echo "$description" | wc -l`
+    assert_equals "$descr_from_comment" "$description"
 }

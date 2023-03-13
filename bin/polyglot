@@ -28,6 +28,7 @@ api_url=${API_URL:-$api_url}
 
 product_id=$PRODUCT_BUNDLE_IDENTIFIER
 base_language='en'
+comment_regex='^\s*//.*'
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -198,10 +199,11 @@ fill_translations_map() {
 translate_string() {
     id="$1"
     value="$2"
+    descr="$3"
     encoded_id=`echo "$id" | sed -e "s/\%/\%25"/g`
     encoded_id=`echo "$encoded_id" | jq -Rr @uri`
 
-    api_response=$(curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$encoded_id" -d "{ \"translations\": { \"en\": \"$value\" } }" -s)
+    api_response=$(curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$encoded_id" -d "{ \"translations\": { \"en\": \"$value\" }, \"description\": \"$descr\" }" -s)
 
     if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
         response_json=`response_to_js_map "[$api_response]"`
@@ -222,7 +224,7 @@ update_languages() {
 }
 
 get_strings_from_file() {
-    echo "`grep \"=\" \"$1\" | grep -v \"^//\"`"
+    echo "`grep '=' \"$1\" | grep -v \"$comment_regex\"`"
 }
 
 if [ "$clear_cache" == true ]; then
@@ -264,10 +266,10 @@ all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e
 
 main() {
     file_to_translate=$1
-
-    # checking for duplicates
+        # checking for duplicates
     base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
     base_file_content=`get_strings_from_file $base_file`
+    base_file_full_content=`grep -e '=' -e "$comment_regex" $base_file`
     duplicates=`find_duplicates "$base_file_content"`
 
     if [ -n "$duplicates" ] ; then
@@ -332,6 +334,7 @@ main() {
     base_file_lines=`echo "$base_file_content" | wc -l`
     base_file_str_ids=`echo "$base_file_content" | cut -d '=' -f 1`
     new_languages=`echo "$all_languages" | sed -e "s/$base_language//"`
+
     # split multiline string into array
     OIFS="$IFS"
     IFS='
@@ -347,7 +350,7 @@ main() {
         file_content=`get_strings_from_file $file`
         file_lines=`echo "$file_content" | wc -l`
         new_strings=true
-        content_diff_reverse=''
+        description=''
 
         if [ $file_lines -eq $base_file_lines ]; then
             content_diff=`diff <(echo "$base_file_content") <(echo "$file_content")`
@@ -384,91 +387,98 @@ main() {
             fi
         fi
 
-        if [ $manual_translations_changed = false ]; then
-        if [ $new_strings = false ]; then
+        if [[ $manual_translations_changed = false ]] && [[ $new_strings = false ]] ; then
             echo "File $file seems to be translated already"
             continue;
-        elif [ -n "$content_diff_reverse" ]; then
-            base_file_content="$content_diff_reverse"
-        fi
         fi
 
         while read line; do
-            if [ "$line" != "" ]; then
-                id=`echo $line | cut -d '=' -f 1`
-                id=`echo ${id//\"}`
-                base_value=`echo $line | cut -d '=' -f 2`
-                base_value=`echo ${base_value//\"}`
-                base_value=`echo ${base_value//;}`
-                manual_translation=`get_translation 'manual' "$id" "$language"`
-                old_record="\"$id\" = "
-                escaped_old_record=`escape_for_grep "$old_record"`
+            if [ "$line" = "" ]; then
+                continue;
+            elif [[ "$line" =~ $comment_regex ]]; then
+                description+="\n$line"
+                continue;
+            fi
 
-                if [ -n "$manual_translation" ]; then
-                    new_record="\"$id\" = \"$manual_translation\";"
-                    escaped_new_record=`escape_for_grep "$new_record"`
+            id=`echo $line | cut -d '=' -f 1`
+            id=`echo ${id//\"}`
+            base_value=`echo $line | cut -d '=' -f 2`
+            base_value=`echo ${base_value//\"}`
+            base_value=`echo ${base_value//;}`
+            manual_translation=`get_translation 'manual' "$id" "$language"`
+            old_record="\"$id\" = "
+            escaped_old_record=`escape_for_grep "$old_record"`
 
-                    if [ "`grep \"$escaped_new_record\" $file`" ]; then
-                        continue;
-                    elif [ "`grep \"$escaped_old_record\" $file`" ]; then
-                        escaped_old_record=`escape_for_sed "$old_record"`
-                        escaped_new_record=`escape_for_sed "$new_record"`
-                        sed -i '' -e "s/$escaped_old_record.*/$escaped_new_record/" "$file"
-                    else
-                        echo "$new_record" >> $file
-                    fi
+            if [ -n "$manual_translation" ]; then
+                new_record="\"$id\" = \"$manual_translation\";"
+                escaped_new_record=`escape_for_grep "$new_record"`
+                description=''
 
+                if [ "`grep \"$escaped_new_record\" $file`" ]; then
                     continue;
+                elif [ "`grep \"$escaped_old_record\" $file`" ]; then
+                    escaped_old_record=`escape_for_sed "$old_record"`
+                    escaped_new_record=`escape_for_sed "$new_record"`
+                    sed -i '' -e "s/$escaped_old_record.*/$escaped_new_record/" "$file"
+                else
+                    echo "$new_record" >> $file
                 fi
 
-                is_new_translation=true
+                continue;
+            fi
 
-                if [ "`grep \"$escaped_old_record\" $file`" ]; then
-                    if [ -z "`grep -Fx \"$line\" $file`" ]; then
-                        continue;
-                    else
-                        is_new_translation=false
+            is_new_translation=true
+
+            if [ "`grep \"$escaped_old_record\" $file`" ]; then
+                if [ -z "`grep -Fx \"$line\" $file`" ]; then
+                    description=''
+                    continue;
+                else
+                    is_new_translation=false
+                fi
+            fi
+
+            auto_translation=`get_translation 'auto' "$id" "$language"`
+
+            if [ -z "$auto_translation" ]; then
+                info "Getting auto-translations for \"$id\""
+                description=`echo "$description" | sed -e 's/\\\n[ 	]*\/\/[ ]*/\\\n/g' -e 's/^\\\n//'`
+                localisation="`translate_string \"$id\" \"$base_value\" \"$description\"`"
+                description=''
+                translation_code="`echo $?`"
+                if [ ! $translation_code -eq 0 ]; then
+                    warning "$localisation"
+                    localisation=""
+                    if [ $translation_code -eq 42 ]; then
+                        exit 42
                     fi
                 fi
 
+                [ -n "$localisation" ] && fill_translations_map 'auto' "$localisation"
                 auto_translation=`get_translation 'auto' "$id" "$language"`
 
                 if [ -z "$auto_translation" ]; then
-                    info "Getting auto-translations for \"$id\""
-                    localisation="`translate_string \"$id\" \"$base_value\"`"
-                    translation_code="`echo $?`"
-                    if [ ! $translation_code -eq 0 ]; then
-                        warning "$localisation"
-                        localisation=""
-                        if [ $translation_code -eq 42 ]; then
-                            exit 42
-                        fi
-                    fi
-
-                    [ -n "$localisation" ] && fill_translations_map 'auto' "$localisation"
-                    auto_translation=`get_translation 'auto' "$id" "$language"`
-
-                    if [ -z "$auto_translation" ]; then
-                        error "Failed to get auto-translations, $localisation"
-                        continue;
-                    fi
-                fi
-
-                if [ $is_new_translation = true ]; then
-                    echo "\"$id\" = \"$auto_translation\";" >> $file
-                else
-                    old_value=`escape_for_sed "$line"`
-                    new_line="\"$id\" = \"$auto_translation\";"
-
-                    if [ "$base_value" = "$auto_translation" ]; then
-                        new_line="$new_line //"
-                    fi
-
-                    new_value=`escape_for_sed "$new_line"`
-                    sed -i '' -e "s/$old_value/$new_value/" "$file"
+                    error "Failed to get auto-translations, $localisation"
+                    continue;
                 fi
             fi
-        done < <(echo "$base_file_content")
+
+            if [ $is_new_translation = true ]; then
+                echo "\"$id\" = \"$auto_translation\";" >> $file
+            else
+                old_value=`escape_for_sed "$line"`
+                new_line="\"$id\" = \"$auto_translation\";"
+
+                if [ "$base_value" = "$auto_translation" ]; then
+                    new_line="$new_line //"
+                fi
+
+                new_value=`escape_for_sed "$new_line"`
+                sed -i '' -e "s/$old_value/$new_value/" "$file"
+            fi
+
+            description=''
+        done < <(echo "$base_file_full_content")
     done
 }
 
