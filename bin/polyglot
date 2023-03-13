@@ -12,8 +12,68 @@ error() {
     echo "`date`: [ERROR] $@"
 }
 
-# declare dictionary if bash supports it
-declare -A translations
+print_help() {
+  echo "Usage: ./polyglot <token> [OPTIONS]"
+  echo "Options:"
+  echo "  -p, --path-to-files <PATH>         Path to the directory to search files to be localized"
+  echo "  -f, --files-to-translate <FILES>   Comma-separated list of file names to translate"
+  echo "  -h, --help                         Show this help message"
+  exit 0
+}
+
+# Setup parameters
+
+api_url='https://api.polyglot.rocks'
+api_url=${API_URL:-$api_url}
+
+product_id=$PRODUCT_BUNDLE_IDENTIFIER
+base_language='en'
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -p|--path-to-files)
+            project_path="$2"
+            shift
+            shift
+            ;;
+        -f|--files-to-translate)
+            files_to_translate="$2"
+            shift
+            shift
+            ;;
+        -h|--help)
+            print_help
+            exit 0
+            ;;
+        --clear-cache)
+            clear_cache=true
+            shift
+            ;;
+        -*|--*)
+            echo "Error: invalid option $1"
+            print_help
+            exit 1
+            ;;
+        *)
+            POSITIONAL_ARGS+=("$1")
+            shift
+            ;;
+  esac
+done
+
+set -- "${POSITIONAL_ARGS[@]}" # Restore positional arguments
+
+if [ "$clear_cache" != true ] && [[ $# -lt 1 ]]; then
+    echo 'Tenant token is required as a first argument'
+    exit 1
+fi
+
+tenant_token="$1"
+
+# Configure environment.
+# Declare dictionary if bash supports it
+
+declare -A translations &>/dev/null;
 if [ $? -eq 0 ]; then
     set_translation() {
         translations[`echo $1_$2_$3`]="$4"
@@ -65,15 +125,6 @@ else
     }
     export -f jq
 fi
-
-api_url='https://api.polyglot.rocks'
-api_url=${API_URL:-$api_url}
-
-files_to_translate="$3"
-tenant_token="$1"
-project_path="$2"
-product_id=$PRODUCT_BUNDLE_IDENTIFIER
-base_language='en'
 
 backup_root="/tmp"
 if [ -n "$GITHUB_HEAD_REF" ]; then
@@ -174,7 +225,7 @@ get_strings_from_file() {
     echo "`grep \"=\" \"$1\" | grep -v \"^//\"`"
 }
 
-if [ "$1" = '--clear-cache' ]; then
+if [ "$clear_cache" == true ]; then
     if [ -z $product_id ] ; then
         echo 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
         exit 1
@@ -184,11 +235,6 @@ if [ "$1" = '--clear-cache' ]; then
     echo "" > "$backup_langs_file"
     echo 'Cache is successfully cleared'
     exit 0
-fi
-
-if [ -z $tenant_token ] ; then
-    echo 'Tenant token is required as a first argument'
-    exit 1
 fi
 
 if [ -z $project_path ] ; then
