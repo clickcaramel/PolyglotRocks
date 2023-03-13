@@ -1,4 +1,4 @@
-name: Polyglot
+name: PolyglotRocks
 description: "It automates Xcode project localization using the Polyglot tool"
 
 inputs:
