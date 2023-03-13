@@ -218,7 +218,7 @@ fill_translations_map() {
 translate_string() {
     id="$1"
     value="$2"
-    descr="$3"
+    descr=`echo "$3" | sed -e 's/"/\\\"/g'`
     encoded_id=`echo "$id" | sed -e "s/\%/\%25"/g`
     encoded_id=`echo "$encoded_id" | jq -Rr @uri`
 
