@@ -1,6 +1,6 @@
 FROM alpine:3.17.2
 
-ENV TOKEN="" PRODUCT_BUNDLE_IDENTIFIER="" API_URL=""
+ENV TOKEN="" PRODUCT_BUNDLE_IDENTIFIER="" API_URL="" FILES_TO_TRANSLATE=""
 
 RUN apk update && apk add --no-cache bash curl git
 
