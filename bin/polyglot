@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+SCRIPT_NAME="./polyglot"
+SCRIPT_NAME=${0:-$SCRIPT_NAME}
+
 warning() {
     echo "`date`: [WARN] $@"
 }
@@ -13,11 +16,27 @@ error() {
 }
 
 print_help() {
-  echo "Usage: ./polyglot <token> [OPTIONS]"
+  echo ""
+  echo "Usage: $SCRIPT_NAME <token> [OPTIONS]"
+  echo ""
   echo "Options:"
-  echo "  -p, --path-to-files <PATH>         Path to the directory to search files to be localized"
-  echo "  -f, --files-to-translate <FILES>   Comma-separated list of file names to translate"
+  echo "  -p, --path-to-files <PATH>         Path to the directory to search files to be localized (optional)"
+  echo "  -f, --files-to-translate <FILES>   Comma-separated list of file names to translate (optional)"
   echo "  -h, --help                         Show this help message"
+  echo ""
+  echo "Examples:"
+  echo ""
+  echo "  1) Execution with a custom path to the working directory:"
+  echo "     $SCRIPT_NAME <token> -p /path/to/sources"
+  echo ""
+  echo "  2) Execution with the name of the file to be translated:"
+  echo "     $SCRIPT_NAME <token> -t InfoPlist.strings"
+  echo ""
+  echo "  3) Execution with the list of file names to be translated:"
+  echo "     $SCRIPT_NAME <token> -t \"Localizable.strings,InfoPlist.strings\""
+  echo ""
+  echo "  4) Execution with both the path to the working directory and the file name for translation:"
+  echo "     $SCRIPT_NAME <token> -p /path/to/sources -t \"Localizable.strings,InfoPlist.strings\""
   exit 0
 }
 
@@ -266,7 +285,8 @@ all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e
 
 main() {
     file_to_translate=$1
-        # checking for duplicates
+    
+    # checking for duplicates
     base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
     base_file_content=`get_strings_from_file $base_file`
     base_file_full_content=`grep -e '=' -e "$comment_regex" $base_file`
