@@ -32,7 +32,7 @@ To use Polyglot, you will need or may need the following parameters:
 | --- | --- | --- |
 | `<your_token>` | The API token provided by Polyglot. | Use the [official website](https://polyglot.rocks) to generate the API token for your tariff plan. |
 | `<your_bundle_id>` | The product bundle identifier of the Xcode project. | 1) Open your Xcode project 2) In the Project Navigator select the project itself 3) Select the main project target 4) In the `General` tab a bundle identifier is under the `Identity` section. |
-| `<path_to_files>` | The path to the directory to search files to be localized. | The path to the place where the tool will recursively search for your localization files, so you can specify any path along which it will be convenient to search for them. However, keep in mind that the path should not point to a directory containing several projects at once. |
+| `<workdir_path>` | The path to the directory to search files to be localized. | The path to the place where the tool will recursively search for your localization files, so you can specify any path along which it will be convenient to search for them. However, keep in mind that the path should not point to a directory containing several projects at once. |
 | `<files_to_translate>` | A comma-separated list of file names to translate. | Here you need to list the file names for translation. For example, it can be `"Localizable.strings"` or `"Localizable.strings,InfoPlist.strings"`. Keep in mind that these are names, not paths. |
 
 These terms will be used further in integration options.
@@ -52,7 +52,7 @@ Then, run `pod install` to install the library.
 To use Polyglot in your Xcode project, add the following command to the build phase:
 
 ```plain
-"${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your token>
+"${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your_token> -f <files_to_translate>
 ```
 
 ![cURL (Xcode)](.images/pods.png)
@@ -62,7 +62,7 @@ To use Polyglot in your Xcode project, add the following command to the build ph
 To run Polyglot on your local machine with Xcode, you can use a special script via cURL. To do this, add the following code to a build phase in your Xcode project:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token>
+/bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> -f <files_to_translate>
 ```
 
 This script will download the latest version of Polyglot if needed and then will execute it at every build of your project using Xcode.
@@ -74,10 +74,10 @@ This script will download the latest version of Polyglot if needed and then will
 Alternatively, you can run Polyglot on your local machine as a regular tool in the terminal. Keep in mind that in this case you probably need to manually set the `PRODUCT_BUNDLE_IDENTIFIER` environment variable that Xcode usually deals with. For example, like this:
 
 ```bash
-PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id> /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> <path_to_files> <files_to_translate>
+PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id> /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> -p <workdir_path> -f <files_to_translate>
 ```
 
-> `<path_to_files>` and `<files_to_translate>` are optional parameters here.
+> `<workdir_path>` and `<files_to_translate>` are optional parameters here.
 
 ### Option 4. GitHub Actions
 
@@ -113,7 +113,7 @@ jobs:
           # The product bundle identifier of the Xcode project.
           bundle_id: <your_bundle_id>
           # The path to the directory to search files to be localized (optional).
-          path: <path_to_files>
+          path: <workdir_path>
           # A comma-separated list of names of .strings files that are being translated (optional).
           files_to_translate: <files_to_translate>
       # (optional) Keep this step if you need to commit changes to the git history.
@@ -151,7 +151,7 @@ jobs:
       - name: Run Polyglot
         run: |
           export PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id>
-          /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> <path_to_files> <files_to_translate>
+          /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> -p <workdir_path> -f <files_to_translate>
       # (optional) Keep this step if you need to commit changes to the git history.
       - name: Commit Changes
         run: |
@@ -174,7 +174,7 @@ docker run --rm \
     --env "TOKEN=<your_token>" \
     --env "PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id>" \
     --env "FILES_TO_TRANSLATE=<files_to_translate>" \
-    --volume "<path_to_files>:/home/polyglot/target" \
+    --volume "<workdir_path>:/home/polyglot/target" \
     ghcr.io/clickcaramel/polyglot-rocks:latest
 ```
 
