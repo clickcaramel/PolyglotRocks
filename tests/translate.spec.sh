@@ -61,12 +61,12 @@ test_token_not_specified() {
 
 test_product_id_not_specified() {
     export PRODUCT_BUNDLE_IDENTIFIER=''
-    result=`$script $tenant_token ../$app_name | grep -v WARN`
+    result=`$script $tenant_token -p ../$app_name | grep -v WARN`
     assert_equals "$result" 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
 }
 
 test_invalid_tenant_token() {
-    assert_equals "`$script 11111 ../$app_name | grep 'Invalid tenant token'`" 'Invalid tenant token'
+    assert_equals "`$script 11111 -p ../$app_name | grep 'Invalid tenant token'`" 'Invalid tenant token'
 }
 
 test_clear_cache_error() {
@@ -77,7 +77,7 @@ test_clear_cache_error() {
 
 test_clear_cache() {
     add_manual_translations
-    output=`$script $tenant_token ../$app_name`
+    output=`$script $tenant_token -p ../$app_name`
     output=`$script --clear-cache`
 
     cache_path=`find $cache_root/$product_id -name ".last_used_manual_translations" | head -1`
@@ -88,7 +88,7 @@ test_clear_cache() {
 test_found_duplicates() {
     base_file_content=`cat $base_file`
     echo '"Loading" = "Loading...";' >> $base_file
-    output="`$script $tenant_token ../$app_name`"
+    output="`$script $tenant_token -p ../$app_name`"
     is_found_duplicates=`echo "$output" | grep -c 'Found duplicates'`
     assert_equals $is_found_duplicates 1
     echo "$base_file_content" > $base_file
@@ -96,7 +96,7 @@ test_found_duplicates() {
 
 test_auto_translation() {
     setup_suite
-    output="`$script $tenant_token ../$app_name`"
+    output="`$script $tenant_token -p ../$app_name`"
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     custom_translation=`grep 'Loading' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     marked_translation=`grep '4K' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
@@ -115,7 +115,7 @@ test_load_manual_translations() {
         local_env_init
     fi
 
-    output=`$script $tenant_token ../$app_name`
+    output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     assert_equals $translation '"de-manual-test";'
 }
@@ -130,15 +130,16 @@ test_translations_from_other_file() {
     cp $base_file $translations_path/en.lproj/$other_source
     echo '"Now" = "Now";' >> $translations_path/en.lproj/$other_source
 
-    output=`$script $tenant_token ../$app_name $other_source`
+    output=`$script $tenant_token -p ../$app_name -f $other_source`
     translation=`grep 'Now' $translations_path/fr.lproj/$other_source | cut -d '=' -f 2`
+
     assert_equals ' "Maintenant";' "$translation"
 }
 
 test_do_nothing_without_updates() {
-    output=`$script $tenant_token ../$app_name`
-    output=`$script $tenant_token ../$app_name`
-    output="`$script $tenant_token ../$app_name`"
+    output=`$script $tenant_token -p ../$app_name`
+    output=`$script $tenant_token -p ../$app_name`
+    output="`$script $tenant_token -p ../$app_name`"
     translation_count=`grep -c 'Loading' $translations_path/de.lproj/$file_name`
     files_without_changes=`echo "$output" | grep -c 'seems to be translated already'`
     assert_equals $files_without_changes 2
@@ -151,7 +152,7 @@ test_add_new_language() {
     path="$translations_path/ru.lproj";
     mkdir -p "$path";
     echo "" > "$path/$file_name"
-    output=`$script $tenant_token ../$app_name`
+    output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $path/$file_name | cut -d '=' -f 2`
     assert_equals ' "Отмена";' "$translation"
 }
@@ -159,13 +160,13 @@ test_add_new_language() {
 test_translate_equal_strings_when_equal_line_count() {
     clear_db "$product_id"
     # x2 launch for getting manual_translations_changed == false
-    output=`$script $tenant_token ../$app_name`
-    output=`$script $tenant_token ../$app_name`
+    output=`$script $tenant_token -p ../$app_name`
+    output=`$script $tenant_token -p ../$app_name`
 
     path="$translations_path/fr.lproj/$file_name";
     echo "$initial_data" | head -4 > $path
     echo '"Loading" = "custom-translation";' >> $path
-    output=`$script $tenant_token ../$app_name`
+    output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $path | cut -d '=' -f 2`
     custom_translation=`grep 'Loading' $path | cut -d '=' -f 2`
     assert_equals ' "Annuler";' "$translation"
@@ -177,7 +178,7 @@ test_remove_duplicates_from_lang_files() {
     echo "$initial_data" > $path
     echo '"4K" = "4K";' >> $path
     echo '"4K" = "4K";' >> $path
-    output=`$script $tenant_token ../$app_name`
+    output=`$script $tenant_token -p ../$app_name`
     translations_count=`grep -c '4K' $path`
     assert_equals 1 "$translations_count"
 }
@@ -187,7 +188,7 @@ test_remove_deleted_strings_from_lang_files() {
     removed_lines='"DELETED" = "deleted str";
 "Unused" = "DELETED";'
     echo "$removed_lines" >> $path
-    output=`$script $tenant_token ../$app_name`
+    output=`$script $tenant_token -p ../$app_name`
     removed_lines_count=`grep -c "$removed_lines" $path`
     assert_equals 0 $removed_lines_count
 }
@@ -200,7 +201,7 @@ test_use_complex_comment() {
 	//  serious case'
     str='"complex_str" = "complex string";'
     echo "$initial_data${NL}$complex_comment${NL}$str" > $path
-    output=`$script $tenant_token ../$app_name`
+    output=`$script $tenant_token -p ../$app_name`
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/complex_str" -s | jq -r '.description'`
     descr_from_comment=`echo "$complex_comment" | sed -e 's/[ 	]*\/\/[ ]*//g'`
 

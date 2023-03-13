@@ -10,4 +10,4 @@ if [ -z "$PRODUCT_BUNDLE_IDENTIFIER" ]; then
   exit 1
 fi
 
-/home/polyglot/bin/polyglot "$TOKEN" /home/polyglot/target
+/home/polyglot/bin/polyglot "$TOKEN" -p /home/polyglot/target -f "$FILES_TO_TRANSLATE"

@@ -10,12 +10,16 @@ inputs:
     required: true
   path:
     description: "The path to the directory to search files to be localized (relative to the root of the repository)."
-    default: ""
     required: false
+    default: ""
   api_url:
     description: "The URL of the API endpoint to use for localization."
     required: false
     default: "https://api.polyglot.rocks"
+  files_to_translate:
+    description: "A comma-separated list of names of .strings files that are being translated (i.e Localizable.strings,InfoPlist.strings)"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -29,6 +33,7 @@ runs:
           --env "TOKEN=${{ inputs.token }}" \
           --env "PRODUCT_BUNDLE_IDENTIFIER=${{ inputs.bundle_id}}" \
           --env "API_URL=${{ inputs.api_url }}" \
+          --env "FILES_TO_TRANSLATE=${{ inputs.files_to_translate }}" \
           --volume "$(pwd)/${{ inputs.path }}:/home/polyglot/target" \
           ghcr.io/clickcaramel/polyglot-rocks:0.1.9
       shell: bash
