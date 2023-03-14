@@ -98,13 +98,9 @@ jobs:
     steps:
       # 1. Checkout latest version of your changes.
       - uses: actions/checkout@v3
-      # (optional) Keep this step if you need to commit changes to the git history.
-      - name: Setup Git
-        run: |
-          git config --local user.name "Polyglot"
-          git config --local user.email "support@polyglot.rocks"
-          git fetch --unshallow
-          git checkout ${GITHUB_HEAD_REF}
+        with:
+          fetch-depth: 0
+          ref: refs/heads/${{ github.event.pull_request.head.ref }}
       # 2. Run Polyglot
       - uses: clickcaramel/PolyglotRocks@main
         with:
@@ -119,8 +115,10 @@ jobs:
       # (optional) Keep this step if you need to commit changes to the git history.
       - name: Commit Changes
         run: |
+          git config --local user.name "Polyglot"
+          git config --local user.email "support@polyglot.rocks"
           git commit -a -m "chore: update translations" || echo "Nothing to commit"
-          git push ${GITHUB_HEAD_REF}
+          git push
 ```
 
 If you want to use the tool on runners with other operating systems, then you can embed its cURL version in the workflow:
@@ -140,13 +138,9 @@ jobs:
     steps:
       # 1. Checkout latest version of your changes.
       - uses: actions/checkout@v3
-      # (optional) Keep this step if you need to commit changes to the git history.
-      - name: Setup Git
-        run: |
-          git config --local user.name "Polyglot"
-          git config --local user.email "support@4spaces.company"
-          git fetch --unshallow
-          git checkout ${GITHUB_HEAD_REF}
+        with:
+          fetch-depth: 0
+          ref: refs/heads/${{ github.event.pull_request.head.ref }}
       # 2. Run Polyglot via cURL
       - name: Run Polyglot
         run: |
@@ -155,8 +149,10 @@ jobs:
       # (optional) Keep this step if you need to commit changes to the git history.
       - name: Commit Changes
         run: |
+          git config --local user.name "Polyglot"
+          git config --local user.email "support@polyglot.rocks"
           git commit -a -m "chore: update translations" || echo "Nothing to commit"
-          git push ${GITHUB_HEAD_REF}
+          git push
 ```
 
 ### Option 5. Docker
