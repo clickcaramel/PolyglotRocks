@@ -22,6 +22,7 @@ Polyglot is a localization tool that simplifies the translation process of your 
   - [Support](#support)
     - [How do I add a new localization?](#how-do-i-add-a-new-localization)
     - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
+    - [How to add manual translations independently?](#how-to-add-manual-translations-independently)
   - [License](#license)
 
 ## Vocabulary
@@ -205,6 +206,12 @@ We suggest not committing translations to the git history to avoid conflicts bet
 
 - Leave all localization files except the base one clean and do not modify them.
 - Launch Polyglot only before deploying to the production or development environment, so not to commit changes to the git history.
+
+### How to add manual translations independently?
+
+Just add your translation to the desired localization file. If Polyglot encounters a string that is different from the one in the base language file, it will ignore it.
+
+But please note that if you have [premium](https://polyglot.rocks/#pricing) plan and you added your translation before AI-translation - you won't get our manual translation. If you want to replace your translation with the manual one, just delete the line with it from the localization file. The next time you run Polyglot, it will process this line as usual.
 
 We hope this helps! If you have any other questions, please do not hesitate to ask.
 

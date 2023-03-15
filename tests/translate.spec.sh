@@ -102,8 +102,8 @@ test_auto_translation() {
     marked_translation=`grep '4K' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/4K" -s | jq -r '.description'`
 
-    assert_equals '"Abbrechen";' $translation
-    assert_equals ' "4K"; //' "$marked_translation"
+    assert_equals '"Stornieren";' $translation
+    assert_equals ' "4K"; // translation is identical to the English string' "$marked_translation"
     assert_equals '"custom-translation";' $custom_translation
     assert_equals 'some comment = 0' "$description"
 }
@@ -154,7 +154,7 @@ test_add_new_language() {
     echo "" > "$path/$file_name"
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $path/$file_name | cut -d '=' -f 2`
-    assert_equals ' "Отмена";' "$translation"
+    assert_equals ' "Отменить";' "$translation"
 }
 
 test_translate_equal_strings_when_equal_line_count() {
