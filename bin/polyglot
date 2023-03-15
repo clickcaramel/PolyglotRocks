@@ -285,7 +285,7 @@ all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e
 
 main() {
     file_to_translate=$1
-    
+
     # checking for duplicates
     base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
     base_file_content=`get_strings_from_file $base_file`
@@ -490,7 +490,7 @@ main() {
                 new_line="\"$id\" = \"$auto_translation\";"
 
                 if [ "$base_value" = "$auto_translation" ]; then
-                    new_line="$new_line //"
+                    new_line="$new_line // translation is identical to the English string"
                 fi
 
                 new_value=`escape_for_sed "$new_line"`

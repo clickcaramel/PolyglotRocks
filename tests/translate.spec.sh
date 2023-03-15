@@ -103,7 +103,7 @@ test_auto_translation() {
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/4K" -s | jq -r '.description'`
 
     assert_equals '"Abbrechen";' $translation
-    assert_equals ' "4K"; //' "$marked_translation"
+    assert_equals ' "4K"; // translation is identical to the English string' "$marked_translation"
     assert_equals '"custom-translation";' $custom_translation
     assert_equals 'some comment = 0' "$description"
 }
