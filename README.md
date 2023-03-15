@@ -22,6 +22,7 @@ Polyglot is a localization tool that simplifies the translation process of your 
   - [Support](#support)
     - [How do I add a new localization?](#how-do-i-add-a-new-localization)
     - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
+    - [How to add manual translations independently?](#how-to-add-manual-translations-independently)
   - [License](#license)
 
 ## Vocabulary
