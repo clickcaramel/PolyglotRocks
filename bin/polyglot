@@ -231,7 +231,9 @@ translate_string() {
         echo "You've reached limits of your free plan. Subscribe to remove the limits and get native translations made by humans. Here is the link for that: `echo \"$api_response\" | jq '.paymentLink' | sed -e 's/^"//' -e 's/"$//'`"
         return 42
     else
-        echo "Something went wrong. Please contact our support team at support@polyglot.rocks. Please, provide the following server response: ${api_response}"
+        echo "Something went wrong. Please contact our support team at support@polyglot.rocks. Please, provide the following information:"
+        echo "Parameters: key=$id; encoded_id=$encoded_id; value=$value; descr=$descr"
+        echo "Server Response: ${api_response}"
         return 50
     fi
 }
