@@ -15,7 +15,9 @@ initial_data='"Cancel" = "Cancel";
 "Saved successfully" = "Saved successfully";
 // some comment = 0
 "4K" = "4K";
-"Loading" = "Loading...";'
+"Loading" = "Loading...";
+"CUSTOM_STRING" = "Custom";
+"disabled_globally = "disabled_completely"; // polyglot:disable:this'
 
 cache_root="/tmp"
 if [ -n "$GITHUB_HEAD_REF" ]; then
@@ -33,16 +35,22 @@ local_env_init() {
     done
 
     rm -rf "$cache_root/$product_id"
-    echo '"Loading" = "custom-translation";' > "$translations_path/de.lproj/$file_name"
+    echo '"Loading" = "custom-translation";
+"CUSTOM_STRING" = "disabled"; // polyglot:disable:this' > "$translations_path/de.lproj/$file_name"
 }
 
 clear_db() {
+    curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/CUSTOM_STRING" -s >> /dev/null
     curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/Cancel" -s >> /dev/null
     curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/Loading" -s >> /dev/null
     curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/Saved successfully" -s >> /dev/null
 }
 
 add_manual_translations() {
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/CUSTOM_STRING" -d "{ \"translations\": { \"en\": \"Custom\", \"de\": \"de-custom-test\", \"fr\": \"fr-custom-test\" } }" -s >> /dev/null
+    # make sure we create auto translations
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/Cancel" -d "{ \"translations\": { \"en\": \"Cancel\" } }" -s >> /dev/null
+    # then populate manual translations
     curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/Cancel" -d "{ \"translations\": { \"en\": \"Cancel\", \"de\": \"de-manual-test\", \"fr\": \"fr-manual-test\" } }" -s >> /dev/null
 }
 
@@ -118,6 +126,11 @@ test_load_manual_translations() {
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     assert_equals $translation '"de-manual-test";'
+
+    custom_translation=`grep 'CUSTOM_STRING' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
+    assert_equals $custom_translation '"fr-custom-test";'
+    custom_translation=`grep 'CUSTOM_STRING' $translations_path/de.lproj/$file_name | sed -e 's/;[ 	]*\/\/.*/;/' | cut -d '=' -f 2`
+    assert_equals $custom_translation '"disabled";'
 }
 
 test_replace_auto_translations_with_manual() {
