@@ -207,6 +207,13 @@ We suggest not committing translations to the git history to avoid conflicts bet
 - Leave all localization files except the base one clean and do not modify them.
 - Launch Polyglot only before deploying to the production or development environment, so not to commit changes to the git history.
 
+### How I stop Polyglot from translating specific strings?
+
+You may add `// polyglot:disable:this` comment at the end of a line containing the string you don't want Polyglot to touch:
+```bash
+"CUSTOM_STRING" = "this value will not be touched by Polyglot"; // polyglot:disable:this
+```
+
 ### How to add manual translations independently?
 
 Just add your translation to the desired localization file. If Polyglot encounters a string that is different from the one in the base language file, it will ignore it.
