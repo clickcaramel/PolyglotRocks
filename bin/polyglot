@@ -290,6 +290,7 @@ main() {
     base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
     base_file_content=`get_strings_from_file $base_file | grep -v 'polyglot:disable:this'`
     base_file_full_content=`grep -e '=' -e "$comment_regex" $base_file | grep -v 'polyglot:disable:this'`
+    disabled_base_file_str_ids=`grep -e '=' $base_file | grep 'polyglot:disable:this' | cut -d '=' -f 1`
     duplicates=`find_duplicates "$base_file_content"`
 
     if [ -n "$duplicates" ] ; then
@@ -394,7 +395,7 @@ main() {
                     file_content=`echo "$file_content" | sort | uniq`
                 fi
 
-                deleted_strings=`echo "$file_content" | cut -d '=' -f 1 | grep -xv "$base_file_str_ids"`
+                deleted_strings=`echo "$file_content" | grep -v "polyglot:disable:this" | cut -d '=' -f 1 | grep -xv "$base_file_str_ids" | grep -xv "$disabled_base_file_str_ids"`
 
                 if [ -n "$deleted_strings" ]; then
                     is_content_changed=true

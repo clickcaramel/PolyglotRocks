@@ -36,7 +36,8 @@ local_env_init() {
 
     rm -rf "$cache_root/$product_id"
     echo '"Loading" = "custom-translation";
-"CUSTOM_STRING" = "disabled"; // polyglot:disable:this' > "$translations_path/de.lproj/$file_name"
+"CUSTOM_STRING" = "disabled"; // polyglot:disable:this
+"disabled_globally = "this-shouldnt-change";' > "$translations_path/de.lproj/$file_name"
 }
 
 clear_db() {
@@ -48,6 +49,7 @@ clear_db() {
 
 add_manual_translations() {
     curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/CUSTOM_STRING" -d "{ \"translations\": { \"en\": \"Custom\", \"de\": \"de-custom-test\", \"fr\": \"fr-custom-test\" } }" -s >> /dev/null
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/disabled_globally" -d "{ \"translations\": { \"en\": \"disabled_completely\" } }" -s >> /dev/null
     # make sure we create auto translations
     curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/Cancel" -d "{ \"translations\": { \"en\": \"Cancel\" } }" -s >> /dev/null
     # then populate manual translations
@@ -126,6 +128,8 @@ test_load_manual_translations() {
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     assert_equals $translation '"de-manual-test";'
+    translation=`grep 'disabled_globally' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
+    assert_equals $translation '"this-shouldnt-change";'
 
     custom_translation=`grep 'CUSTOM_STRING' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
     assert_equals $custom_translation '"fr-custom-test";'
@@ -201,9 +205,13 @@ test_remove_deleted_strings_from_lang_files() {
     removed_lines='"DELETED" = "deleted str";
 "Unused" = "DELETED";'
     echo "$removed_lines" >> $path
+    disabled_lines='"disabled_globally = "this-shouldnt-change";';
+    echo "$disabled_lines" >> $path
     output=`$script $tenant_token -p ../$app_name`
     removed_lines_count=`grep -c "$removed_lines" $path`
     assert_equals 0 $removed_lines_count
+    disabled_lines_count=`grep -c "$disabled_lines" $path`
+    assert_equals 1 $disabled_lines_count
 }
 
 test_use_complex_comment() {
