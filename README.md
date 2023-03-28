@@ -56,7 +56,7 @@ To use Polyglot in your Xcode project, add the following command to the build ph
 "${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your_token> -f <files_to_translate>
 ```
 
-![cURL (Xcode)](.images/pods.png)
+![Pods](.images/pods.png)
 
 ### Option 2. cURL (Xcode)
 
