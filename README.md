@@ -8,6 +8,8 @@
 
 Polyglot is a localization tool that simplifies the translation process of your iOS mobile application. Our SDK can process `.strings` files and provide fast and accurate translations using AI-powered technology, as well as manual ones a bit later. By using Polyglot, you can easily translate your app into multiple languages and reach a wider audience with minimal effort.
 
+The tool uses English localization as the basis for translations.
+
 ## Contents
 
 - [Polyglot](#polyglot)
@@ -21,7 +23,10 @@ Polyglot is a localization tool that simplifies the translation process of your 
     - [Option 5. Docker](#option-5-docker)
   - [Support](#support)
     - [How do I add a new localization?](#how-do-i-add-a-new-localization)
+    - [In which file do I need to write strings for translation?](#in-which-file-do-i-need-to-write-strings-for-translation)
+    - [What is the difference between Base and English localizations?](#what-is-the-difference-between-base-and-english-localizations)
     - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
+    - [How I stop Polyglot from translating specific strings?](#how-i-stop-polyglot-from-translating-specific-strings)
     - [How to add manual translations independently?](#how-to-add-manual-translations-independently)
   - [License](#license)
 
@@ -199,6 +204,20 @@ To add a new localization, follow these steps:
 Now Polyglot will see this file and translate your lines from the base language to the new one too.
 
 ![Locale](.images/support/locale.png)
+
+### In which file do I need to write strings for translation?
+
+PolyglotRocks for translation takes as a basis the lines that are written in the `.strings` file (by default, `Localizable.strings`) and lie in the `en.lproj` directory (English localization). Then it translates them into other languages, the support of which (or the presence of the corresponding `.lproj` directory) is in the project.
+
+Since the tool uses English localization as the basis for translations, you can initially keep other localization files empty, and it will fill them in by itself.
+
+### What is the difference between Base and English localizations?
+
+Base Internationalization is a feature in Xcode that allows developers to create a default set of resources (such as interface files, images, and strings) that are independent of any specific language or region. These resources are then localized based on the selected language and region.
+
+If a developer uses Base Internationalization, then the "Base" localization refers to the default set of resources that are independent of any specific language or region and the "English" localization would refer to the English translation of these resources.
+
+When using PolyglotRocks, it will use only the "English" localization file as the source for translations into other languages.
 
 ### Should I commit translations to the git history?
 
