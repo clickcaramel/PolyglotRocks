@@ -287,11 +287,12 @@ all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e
 
 main() {
     file_to_translate=$1
-    
+
     # checking for duplicates
     base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
-    base_file_content=`get_strings_from_file $base_file`
-    base_file_full_content=`grep -e '=' -e "$comment_regex" $base_file`
+    base_file_content=`get_strings_from_file $base_file | grep -v 'polyglot:disable:this'`
+    base_file_full_content=`grep -e '=' -e "$comment_regex" $base_file | grep -v 'polyglot:disable:this'`
+    disabled_base_file_str_ids=`grep -e '=' $base_file | grep 'polyglot:disable:this' | cut -d '=' -f 1`
     duplicates=`find_duplicates "$base_file_content"`
 
     if [ -n "$duplicates" ] ; then
@@ -396,7 +397,7 @@ main() {
                     file_content=`echo "$file_content" | sort | uniq`
                 fi
 
-                deleted_strings=`echo "$file_content" | cut -d '=' -f 1 | grep -xv "$base_file_str_ids"`
+                deleted_strings=`echo "$file_content" | grep -v "polyglot:disable:this" | cut -d '=' -f 1 | grep -xv "$base_file_str_ids" | grep -xv "$disabled_base_file_str_ids"`
 
                 if [ -n "$deleted_strings" ]; then
                     is_content_changed=true
@@ -425,11 +426,12 @@ main() {
             id=`echo $line | cut -d '=' -f 1`
             id=`echo ${id//\"}`
             base_value=`echo $line | cut -d '=' -f 2`
-            base_value=`echo ${base_value//\"}`
+            base_value=`echo ${base_value//\"} | sed -e 's/;[ 	]*\/\/.*/;/'`
             base_value=`echo ${base_value//;}`
             manual_translation=`get_translation 'manual' "$id" "$language"`
             old_record="\"$id\" = "
             escaped_old_record=`escape_for_grep "$old_record"`
+            disabled_translation="`(echo $line ; grep \"$escaped_old_record\" $file) | grep "polyglot:disable:this"`"
 
             if [ -n "$manual_translation" ]; then
                 new_record="\"$id\" = \"$manual_translation\";"
@@ -439,9 +441,13 @@ main() {
                 if [ "`grep \"$escaped_new_record\" $file`" ]; then
                     continue;
                 elif [ "`grep \"$escaped_old_record\" $file`" ]; then
-                    escaped_old_record=`escape_for_sed "$old_record"`
-                    escaped_new_record=`escape_for_sed "$new_record"`
-                    sed -i '' -e "s/$escaped_old_record.*/$escaped_new_record/" "$file"
+                    if [ -z "$disabled_translation" ]; then
+                        escaped_old_record=`escape_for_sed "$old_record"`
+                        escaped_new_record=`escape_for_sed "$new_record"`
+                        sed -i '' -e "s/$escaped_old_record.*/$escaped_new_record/" "$file" 2> /dev/null
+                    else
+                        info "Translation for string '$id' seems to be disabled for '$language' language so Polyglot will not override this value. If you want Polyglot to override it, remove 'polyglot:disable:this' from the file."
+                    fi
                 else
                     echo "$new_record" >> $file
                 fi
@@ -492,11 +498,11 @@ main() {
                 new_line="\"$id\" = \"$auto_translation\";"
 
                 if [ "$base_value" = "$auto_translation" ]; then
-                    new_line="$new_line //"
+                    new_line="$new_line // translation is identical to the English string"
                 fi
 
                 new_value=`escape_for_sed "$new_line"`
-                sed -i '' -e "s/$old_value/$new_value/" "$file"
+                sed -i '' -e "s/$old_value/$new_value/" "$file" 2> /dev/null
             fi
 
             description=''

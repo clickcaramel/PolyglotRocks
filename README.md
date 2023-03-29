@@ -8,6 +8,8 @@
 
 Polyglot is a localization tool that simplifies the translation process of your iOS mobile application. Our SDK can process `.strings` files and provide fast and accurate translations using AI-powered technology, as well as manual ones a bit later. By using Polyglot, you can easily translate your app into multiple languages and reach a wider audience with minimal effort.
 
+The tool uses English localization as the basis for translations.
+
 ## Contents
 
 - [Polyglot](#polyglot)
@@ -21,7 +23,11 @@ Polyglot is a localization tool that simplifies the translation process of your 
     - [Option 5. Docker](#option-5-docker)
   - [Support](#support)
     - [How do I add a new localization?](#how-do-i-add-a-new-localization)
+    - [In which file do I need to write strings for translation?](#in-which-file-do-i-need-to-write-strings-for-translation)
+    - [What is the difference between Base and English localizations?](#what-is-the-difference-between-base-and-english-localizations)
     - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
+    - [How I stop Polyglot from translating specific strings?](#how-i-stop-polyglot-from-translating-specific-strings)
+    - [How to add manual translations independently?](#how-to-add-manual-translations-independently)
   - [License](#license)
 
 ## Vocabulary
@@ -55,7 +61,7 @@ To use Polyglot in your Xcode project, add the following command to the build ph
 "${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your_token> -f <files_to_translate>
 ```
 
-![cURL (Xcode)](.images/pods.png)
+![Pods](.images/pods.png)
 
 ### Option 2. cURL (Xcode)
 
@@ -199,12 +205,39 @@ Now Polyglot will see this file and translate your lines from the base language 
 
 ![Locale](.images/support/locale.png)
 
+### In which file do I need to write strings for translation?
+
+PolyglotRocks for translation takes as a basis the lines that are written in the `.strings` file (by default, `Localizable.strings`) and lie in the `en.lproj` directory (English localization). Then it translates them into other languages, the support of which (or the presence of the corresponding `.lproj` directory) is in the project.
+
+Since the tool uses English localization as the basis for translations, you can initially keep other localization files empty, and it will fill them in by itself.
+
+### What is the difference between Base and English localizations?
+
+Base Internationalization is a feature in Xcode that allows developers to create a default set of resources (such as interface files, images, and strings) that are independent of any specific language or region. These resources are then localized based on the selected language and region.
+
+If a developer uses Base Internationalization, then the "Base" localization refers to the default set of resources that are independent of any specific language or region and the "English" localization would refer to the English translation of these resources.
+
+When using PolyglotRocks, it will use only the "English" localization file as the source for translations into other languages.
+
 ### Should I commit translations to the git history?
 
 We suggest not committing translations to the git history to avoid conflicts between git branches. Instead, translations should be used only for deployment. Here's how to avoid committing translations:
 
 - Leave all localization files except the base one clean and do not modify them.
 - Launch Polyglot only before deploying to the production or development environment, so not to commit changes to the git history.
+
+### How I stop Polyglot from translating specific strings?
+
+You may add `// polyglot:disable:this` comment at the end of a line containing the string you don't want Polyglot to touch:
+```bash
+"CUSTOM_STRING" = "this value will not be touched by Polyglot"; // polyglot:disable:this
+```
+
+### How to add manual translations independently?
+
+Just add your translation to the desired localization file. If Polyglot encounters a string that is different from the one in the base language file, it will ignore it.
+
+But please note that if you have [premium](https://polyglot.rocks/#pricing) plan and you added your translation before AI-translation - you won't get our manual translation. If you want to replace your translation with the manual one, just delete the line with it from the localization file. The next time you run Polyglot, it will process this line as usual.
 
 We hope this helps! If you have any other questions, please do not hesitate to ask.
 

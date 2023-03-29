@@ -111,6 +111,24 @@ assert_equals() {
   fi
 }
 
+assert_multiple() {
+  local expected_values=("$@")
+  local actual="${expected_values[${#expected_values[@]}-1]}"
+  unset 'expected_values[${#expected_values[@]}-1]'
+
+  local found=false
+  for expected in "${expected_values[@]}"; do
+    if [[ "$actual" == *"$expected"* ]]; then
+      found=true
+    fi
+  done
+
+  if [[ "$found" == false ]]; then
+    fail "Value [$actual] does not match any element in the [${expected_values[*]}]"
+  fi
+}
+
+
 assert_not_equals() {
   local unexpected=$1
   local actual=$2

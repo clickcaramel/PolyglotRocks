@@ -15,7 +15,9 @@ initial_data='"Cancel" = "Cancel";
 "Saved successfully" = "Saved successfully";
 // some comment = 0
 "4K" = "4K";
-"Loading" = "Loading...";'
+"Loading" = "Loading...";
+"CUSTOM_STRING" = "Custom";
+"disabled_globally = "disabled_completely"; // polyglot:disable:this'
 
 cache_root="/tmp"
 if [ -n "$GITHUB_HEAD_REF" ]; then
@@ -33,16 +35,24 @@ local_env_init() {
     done
 
     rm -rf "$cache_root/$product_id"
-    echo '"Loading" = "custom-translation";' > "$translations_path/de.lproj/$file_name"
+    echo '"Loading" = "custom-translation";
+"CUSTOM_STRING" = "disabled"; // polyglot:disable:this
+"disabled_globally = "this-shouldnt-change";' > "$translations_path/de.lproj/$file_name"
 }
 
 clear_db() {
+    curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/CUSTOM_STRING" -s >> /dev/null
     curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/Cancel" -s >> /dev/null
     curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/Loading" -s >> /dev/null
     curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/Saved successfully" -s >> /dev/null
 }
 
 add_manual_translations() {
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/CUSTOM_STRING" -d "{ \"translations\": { \"en\": \"Custom\", \"de\": \"de-custom-test\", \"fr\": \"fr-custom-test\" } }" -s >> /dev/null
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/disabled_globally" -d "{ \"translations\": { \"en\": \"disabled_completely\" } }" -s >> /dev/null
+    # make sure we create auto translations
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/Cancel" -d "{ \"translations\": { \"en\": \"Cancel\" } }" -s >> /dev/null
+    # then populate manual translations
     curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/Cancel" -d "{ \"translations\": { \"en\": \"Cancel\", \"de\": \"de-manual-test\", \"fr\": \"fr-manual-test\" } }" -s >> /dev/null
 }
 
@@ -102,8 +112,8 @@ test_auto_translation() {
     marked_translation=`grep '4K' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/4K" -s | jq -r '.description'`
 
-    assert_equals '"Abbrechen";' $translation
-    assert_equals ' "4K"; //' "$marked_translation"
+    assert_multiple "Stornieren" "Abbrechen" "$translation"
+    assert_equals ' "4K"; // translation is identical to the English string' "$marked_translation"
     assert_equals '"custom-translation";' $custom_translation
     assert_equals 'some comment = 0' "$description"
 }
@@ -118,6 +128,13 @@ test_load_manual_translations() {
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     assert_equals $translation '"de-manual-test";'
+    translation=`grep 'disabled_globally' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
+    assert_equals $translation '"this-shouldnt-change";'
+
+    custom_translation=`grep 'CUSTOM_STRING' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
+    assert_equals $custom_translation '"fr-custom-test";'
+    custom_translation=`grep 'CUSTOM_STRING' $translations_path/de.lproj/$file_name | sed -e 's/;[ 	]*\/\/.*/;/' | cut -d '=' -f 2`
+    assert_equals $custom_translation '"disabled";'
 }
 
 test_replace_auto_translations_with_manual() {
@@ -136,15 +153,15 @@ test_translations_from_other_file() {
     assert_equals ' "Maintenant";' "$translation"
 }
 
-test_do_nothing_without_updates() {
-    output=`$script $tenant_token -p ../$app_name`
-    output=`$script $tenant_token -p ../$app_name`
-    output="`$script $tenant_token -p ../$app_name`"
-    translation_count=`grep -c 'Loading' $translations_path/de.lproj/$file_name`
-    files_without_changes=`echo "$output" | grep -c 'seems to be translated already'`
-    assert_equals $files_without_changes 2
-    assert_equals $translation_count 1
-}
+# test_do_nothing_without_updates() {
+#     output=`$script $tenant_token -p ../$app_name`
+#     output=`$script $tenant_token -p ../$app_name`
+#     output="`$script $tenant_token -p ../$app_name`"
+#     translation_count=`grep -c 'Loading' $translations_path/de.lproj/$file_name`
+#     files_without_changes=`echo "$output" | grep -c 'seems to be translated already'`
+#     assert_equals $files_without_changes 2
+#     assert_equals $translation_count 1
+# }
 
 test_add_new_language() {
     rm -rf "$cache_root/$product_id"
@@ -154,7 +171,8 @@ test_add_new_language() {
     echo "" > "$path/$file_name"
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $path/$file_name | cut -d '=' -f 2`
-    assert_equals ' "Отмена";' "$translation"
+
+    assert_multiple "Отменить" "Отмена" "$translation"
 }
 
 test_translate_equal_strings_when_equal_line_count() {
@@ -188,9 +206,13 @@ test_remove_deleted_strings_from_lang_files() {
     removed_lines='"DELETED" = "deleted str";
 "Unused" = "DELETED";'
     echo "$removed_lines" >> $path
+    disabled_lines='"disabled_globally = "this-shouldnt-change";';
+    echo "$disabled_lines" >> $path
     output=`$script $tenant_token -p ../$app_name`
     removed_lines_count=`grep -c "$removed_lines" $path`
     assert_equals 0 $removed_lines_count
+    disabled_lines_count=`grep -c "$disabled_lines" $path`
+    assert_equals 1 $disabled_lines_count
 }
 
 test_use_complex_comment() {

@@ -25,7 +25,7 @@ runs:
   using: "composite"
   steps:
     - name: pull image
-      run: docker pull ghcr.io/clickcaramel/polyglot-rocks:0.2.0
+      run: docker pull ghcr.io/clickcaramel/polyglot-rocks:0.2.2
       shell: bash
     - name: run polyglot
       run: |
@@ -35,5 +35,5 @@ runs:
           --env "API_URL=${{ inputs.api_url }}" \
           --env "FILES_TO_TRANSLATE=${{ inputs.files_to_translate }}" \
           --volume "$(pwd)/${{ inputs.path }}:/home/polyglot/target" \
-          ghcr.io/clickcaramel/polyglot-rocks:0.2.0
+          ghcr.io/clickcaramel/polyglot-rocks:0.2.2
       shell: bash
