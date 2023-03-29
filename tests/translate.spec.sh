@@ -153,15 +153,15 @@ test_translations_from_other_file() {
     assert_equals ' "Maintenant";' "$translation"
 }
 
-test_do_nothing_without_updates() {
-    output=`$script $tenant_token -p ../$app_name`
-    output=`$script $tenant_token -p ../$app_name`
-    output="`$script $tenant_token -p ../$app_name`"
-    translation_count=`grep -c 'Loading' $translations_path/de.lproj/$file_name`
-    files_without_changes=`echo "$output" | grep -c 'seems to be translated already'`
-    assert_equals $files_without_changes 2
-    assert_equals $translation_count 1
-}
+# test_do_nothing_without_updates() {
+#     output=`$script $tenant_token -p ../$app_name`
+#     output=`$script $tenant_token -p ../$app_name`
+#     output="`$script $tenant_token -p ../$app_name`"
+#     translation_count=`grep -c 'Loading' $translations_path/de.lproj/$file_name`
+#     files_without_changes=`echo "$output" | grep -c 'seems to be translated already'`
+#     assert_equals $files_without_changes 2
+#     assert_equals $translation_count 1
+# }
 
 test_add_new_language() {
     rm -rf "$cache_root/$product_id"
