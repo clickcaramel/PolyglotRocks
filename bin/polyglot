@@ -45,6 +45,8 @@ print_help() {
 api_url='https://api.polyglot.rocks'
 api_url=${API_URL:-$api_url}
 
+support_url='https://github.com/clickcaramel/PolyglotRocks#support'
+
 product_id=$PRODUCT_BUNDLE_IDENTIFIER
 base_language='en'
 comment_regex='^\s*//.*'
@@ -280,8 +282,19 @@ new_translations_file="$backup_root/translations.$RANDOM.json"
 echo '{}' > $new_translations_file
 
 langs_path=`find $project_path \( -name Pods -o -name Carthage \) -prune -o -type d -name *.lproj -print | head -1 | sed -e 's/\/[a-z]*\.lproj//'`
+
+if [ -z $langs_path ]; then
+    warning "Localization files were not found. To add them, follow the documentation: [$support_url]"
+    exit 0
+fi
+
 escaped_langs_path="`escape_for_sed $langs_path`"
 all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//' | sort`
+
+if [ "$all_languages" = "en" ]; then
+    warning "Only the English localization was found. To add other languages, follow the documentation: [$support_url]"
+    exit 0
+fi
 
 main() {
     file_to_translate=$1
@@ -290,6 +303,12 @@ main() {
     base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
     base_file_content=`get_strings_from_file $base_file | grep -v 'polyglot:disable:this'`
     base_file_full_content=`grep -e '=' -e "$comment_regex" $base_file | grep -v 'polyglot:disable:this'`
+
+    if [ -z "$base_file_full_content" ]; then
+        warning "The English localization file ($file_to_translate) is empty, there is nothing to translate. Add lines to translate there. Documentation: [$support_url]"
+        return 0
+    fi
+
     disabled_base_file_str_ids=`grep -e '=' $base_file | grep 'polyglot:disable:this' | cut -d '=' -f 1`
     duplicates=`find_duplicates "$base_file_content"`
 
