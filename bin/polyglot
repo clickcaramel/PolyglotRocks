@@ -50,6 +50,7 @@ support_url='https://github.com/clickcaramel/PolyglotRocks#support'
 product_id=$PRODUCT_BUNDLE_IDENTIFIER
 base_language='en'
 comment_regex='^\s*//.*'
+line_regex='^[[:space:]]*"([^"]+)"[[:space:]]*=[[:space:]]*"([^"]+)";[[:space:]]*$'
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -451,6 +452,8 @@ main() {
                 continue;
             elif [[ "$line" =~ $comment_regex ]]; then
                 description+="\n$line"
+                continue;
+            elif [[ ! "$line" =~ $line_regex ]]; then
                 continue;
             fi
 
