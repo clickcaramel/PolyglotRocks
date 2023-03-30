@@ -153,6 +153,12 @@ test_translations_from_other_file() {
     assert_equals ' "Maintenant";' "$translation"
 }
 
+test_error_on_invalid_extension() {
+    output=`$script $tenant_token -p ../$app_name -f "Localizable.strings,Main.storyboard"`
+    found_error=`echo "$output" | grep "'Main.storyboard' is not a .strings file"`
+    assert_not_equals "" "$found_error"
+}
+
 # test_do_nothing_without_updates() {
 #     output=`$script $tenant_token -p ../$app_name`
 #     output=`$script $tenant_token -p ../$app_name`
