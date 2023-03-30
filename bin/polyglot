@@ -278,6 +278,14 @@ IFS=','
 read -ra files_to_translate <<< "$files_to_translate"
 IFS=$OLDIFS
 
+for file in "${files_to_translate[@]}"
+do
+  if [[ "${file##*.}" != "strings" ]]; then
+    error "'$file' is not a .strings file"
+    exit 1
+  fi
+done
+
 new_translations_file="$backup_root/translations.$RANDOM.json"
 echo '{}' > $new_translations_file
 
