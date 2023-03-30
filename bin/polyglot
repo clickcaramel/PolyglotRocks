@@ -302,6 +302,8 @@ all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e
 if [ "$all_languages" = "en" ]; then
     warning "Only the English localization was found. To add other languages, follow the documentation: [$support_url]"
     exit 0
+else
+    info "Found languages: $(echo "$all_languages" | xargs)"
 fi
 
 main() {
