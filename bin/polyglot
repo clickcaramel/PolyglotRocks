@@ -297,7 +297,7 @@ if [ -z $langs_path ]; then
 fi
 
 escaped_langs_path="`escape_for_sed $langs_path`"
-all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//' | sort`
+all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//' -e 's/Base//' | sort`
 
 if [ "$all_languages" = "en" ]; then
     warning "Only the English localization was found. To add other languages, follow the documentation: [$support_url]"
