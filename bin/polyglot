@@ -289,7 +289,7 @@ done
 new_translations_file="$backup_root/translations.$RANDOM.json"
 echo '{}' > $new_translations_file
 
-langs_path=`find $project_path \( -name Pods -o -name Carthage \) -prune -o -type d -name *.lproj -print | head -1 | sed -e 's/\/[a-z]*\.lproj//'`
+langs_path=`find $project_path \( -name Pods -o -name Carthage \) -prune -o -type d -name *.lproj -print | head -1 | sed -e 's/\/[a-zA-Z\-]*\.lproj//'`
 
 if [ -z $langs_path ]; then
     warning "Localization files were not found. To add them, follow the documentation: [$support_url]"
