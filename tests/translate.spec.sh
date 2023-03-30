@@ -181,6 +181,16 @@ test_add_new_language() {
     assert_multiple "Отменить" "Отмена" "$translation"
 }
 
+test_base_is_not_included() {
+    base_path="$translations_path/Base.lproj"
+    mkdir "$base_path"
+    touch "$base_path/Localizble.strings"
+    output=`$script $tenant_token -p ../$app_name`
+    found_base=`echo "$output" | grep "Found languages:" | grep -o Base`
+    rm -rf "$base_path"
+    assert_equals "" "$found_base"
+}
+
 test_translate_equal_strings_when_equal_line_count() {
     clear_db "$product_id"
     # x2 launch for getting manual_translations_changed == false

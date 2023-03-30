@@ -289,7 +289,7 @@ done
 new_translations_file="$backup_root/translations.$RANDOM.json"
 echo '{}' > $new_translations_file
 
-langs_path=`find $project_path \( -name Pods -o -name Carthage \) -prune -o -type d -name *.lproj -print | head -1 | sed -e 's/\/[a-z]*\.lproj//'`
+langs_path=`find $project_path \( -name Pods -o -name Carthage \) -prune -o -type d -name *.lproj -print | head -1 | sed -e 's/\/[a-zA-Z\-]*\.lproj//'`
 
 if [ -z $langs_path ]; then
     warning "Localization files were not found. To add them, follow the documentation: [$support_url]"
@@ -297,11 +297,13 @@ if [ -z $langs_path ]; then
 fi
 
 escaped_langs_path="`escape_for_sed $langs_path`"
-all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//' | sort`
+all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//' -e 's/Base//' | sort`
 
 if [ "$all_languages" = "en" ]; then
     warning "Only the English localization was found. To add other languages, follow the documentation: [$support_url]"
     exit 0
+else
+    info "Found languages: $(echo "$all_languages" | xargs)"
 fi
 
 main() {
@@ -393,6 +395,10 @@ main() {
 
     for language in ${langs[@]}; do
         file="$langs_path/$language.lproj/$file_to_translate"
+        if [[ ! -f "$file" ]]; then
+            continue;
+        fi
+
         echo ''
         info "Processing $file"
         file_content=`get_strings_from_file $file`
