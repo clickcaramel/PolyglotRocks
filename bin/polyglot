@@ -393,6 +393,10 @@ main() {
 
     for language in ${langs[@]}; do
         file="$langs_path/$language.lproj/$file_to_translate"
+        if [[ ! -f "$file" ]]; then
+            continue;
+        fi
+
         echo ''
         info "Processing $file"
         file_content=`get_strings_from_file $file`
