@@ -230,8 +230,12 @@ translate_string() {
     if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
         response_json=`response_to_js_map "[$api_response]"`
         echo "$response_json"
-    elif [ "`echo \"$api_response\" | grep 'paymentLink'`" ]; then
-        echo "You've reached limits of your free plan. Subscribe to remove the limits and get native translations made by humans. Here is the link for that: `echo \"$api_response\" | jq '.paymentLink' | sed -e 's/^"//' -e 's/"$//'`"
+    elif [ "`echo \"$api_response\" | grep 'paymentLinks'`" ]; then
+        premium_url=`echo \"$api_response\" | jq '.paymentLinks' | jq '.premium' | sed -e 's/^"//' -e 's/"$//'`
+        unlimited_ai_url=`echo \"$api_response\" | jq '.paymentLinks' | jq '.unlimitedAi' | sed -e 's/^"//' -e 's/"$//'`
+        echo "You've reached limits of your free plan. Subscribe to remove the limits and get native translations made by humans."
+        echo "Premium plan: [$premium_url]"
+        echo "Unlimited AI plan: [$unlimited_ai_url]"
         return 42
     else
         echo "Something went wrong. Please contact our support team at support@polyglot.rocks. Please, provide the following server response: ${api_response}"
