@@ -231,10 +231,10 @@ translate_string() {
         response_json=`response_to_js_map "[$api_response]"`
         echo "$response_json"
     elif [ "`echo \"$api_response\" | grep 'paymentLinks'`" ]; then
-        premium_url=`echo \"$api_response\" | jq '.paymentLinks' | jq '.premium' | sed -e 's/^"//' -e 's/"$//'`
-        unlimited_ai_url=`echo \"$api_response\" | jq '.paymentLinks' | jq '.unlimitedAi' | sed -e 's/^"//' -e 's/"$//'`
-        echo "You've reached limits of your free plan. Subscribe to remove the limits and get native translations made by humans."
-        echo "Premium plan: [$premium_url]"
+        premium_url=`echo "$api_response" | jq '.paymentLinks.premium' | sed -e 's/^"//' -e 's/"$//'`
+        unlimited_ai_url=`echo "$api_response" | jq '.paymentLinks.unlimitedAi' | sed -e 's/^"//' -e 's/"$//'`
+        echo "You've reached limits of your free plan. Subscribe to remove the limits"
+        echo "Premium plan with translations by humans: [$premium_url]"
         echo "Unlimited AI plan: [$unlimited_ai_url]"
         return 42
     else
