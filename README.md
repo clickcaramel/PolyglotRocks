@@ -24,7 +24,7 @@ The tool uses English localization as the basis for translations.
   - [Support](#support)
     - [How do I add a new localization?](#how-do-i-add-a-new-localization)
     - [In which file do I need to write strings for translation?](#in-which-file-do-i-need-to-write-strings-for-translation)
-    - [What is the difference between Base and English localizations?](#what-is-the-difference-between-base-and-english-localizations)
+    - [Should I use Base localization or English?](#should-i-use-base-localization-or-english)
     - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
     - [How I stop Polyglot from translating specific strings?](#how-i-stop-polyglot-from-translating-specific-strings)
     - [How to add manual translations independently?](#how-to-add-manual-translations-independently)
@@ -58,22 +58,34 @@ Then, run `pod install` to install the library.
 To use Polyglot in your Xcode project, add the following command to the build phase:
 
 ```plain
-"${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your_token> -f <files_to_translate>
+"${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your_token>
 ```
 
 ![Pods](.images/pods.png)
+
+Optionally, you can set the `-f` parameter to specify the file names for translation (see [vocabulary](#vocabulary) for more details):
+
+```bash
+"${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your_token> -f <files_to_translate>
+```
 
 ### Option 2. cURL (Xcode)
 
 To run Polyglot on your local machine with Xcode, you can use a special script via cURL. To do this, add the following code to a build phase in your Xcode project:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> -f <files_to_translate>
+/bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token>
 ```
 
 This script will download the latest version of Polyglot if needed and then will execute it at every build of your project using Xcode.
 
 ![cURL (Xcode)](.images/curl_xcode.png)
+
+Optionally, you can set the `-f` parameter to specify the file names for translation (see [vocabulary](#vocabulary) for more details):
+
+```bash
+/bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> -f <files_to_translate>
+```
 
 ### Option 3. cURL (Manually)
 
@@ -211,13 +223,9 @@ PolyglotRocks for translation takes as a basis the lines that are written in the
 
 Since the tool uses English localization as the basis for translations, you can initially keep other localization files empty, and it will fill them in by itself.
 
-### What is the difference between Base and English localizations?
+### Should I use Base localization or English?
 
-Base Internationalization is a feature in Xcode that allows developers to create a default set of resources (such as interface files, images, and strings) that are independent of any specific language or region. These resources are then localized based on the selected language and region.
-
-If a developer uses Base Internationalization, then the "Base" localization refers to the default set of resources that are independent of any specific language or region and the "English" localization would refer to the English translation of these resources.
-
-When using PolyglotRocks, it will use only the "English" localization file as the source for translations into other languages.
+PolyglotRocks **considers only** the "English" localization (`en.lproj`) as the source for translations into other languages. Hence, the content of `Base.lproj` is ignored by the tool.
 
 ### Should I commit translations to the git history?
 
