@@ -238,7 +238,9 @@ translate_string() {
         echo "Unlimited AI plan: [$unlimited_ai_url]"
         return 42
     else
-        echo "Something went wrong. Please contact our support team at support@polyglot.rocks. Please, provide the following server response: ${api_response}"
+        echo "Something went wrong. Please contact our support team at support@polyglot.rocks. Please, provide the following information:"
+        echo "Parameters: key=$id; encoded_id=$encoded_id; value=$value; descr=$descr"
+        echo "Server Response: ${api_response}"
         return 50
     fi
 }
