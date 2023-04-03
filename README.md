@@ -21,8 +21,8 @@ The tool uses English localization as the basis for translations.
     - [Option 3. cURL (Manually)](#option-3-curl-manually)
     - [Option 4. GitHub Actions](#option-4-github-actions)
     - [Option 5. Docker](#option-5-docker)
+  - [Adding a new localization](#adding-a-new-localization)
   - [Support](#support)
-    - [How do I add a new localization?](#how-do-i-add-a-new-localization)
     - [In which file do I need to write strings for translation?](#in-which-file-do-i-need-to-write-strings-for-translation)
     - [Should I use Base localization or English?](#should-i-use-base-localization-or-english)
     - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
@@ -69,6 +69,8 @@ Optionally, you can set the `-f` parameter to specify the file names for transla
 "${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your_token> -f <files_to_translate>
 ```
 
+Now you can try [adding languages to the project](#adding-a-new-localization).
+
 ### Option 2. cURL (Xcode)
 
 To run Polyglot on your local machine with Xcode, you can use a special script via cURL. To do this, add the following code to a build phase in your Xcode project:
@@ -87,6 +89,8 @@ Optionally, you can set the `-f` parameter to specify the file names for transla
 /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> -f <files_to_translate>
 ```
 
+Now you can try [adding languages to the project](#adding-a-new-localization).
+
 ### Option 3. cURL (Manually)
 
 Alternatively, you can run Polyglot on your local machine as a regular tool in the terminal. Keep in mind that in this case you probably need to manually set the `PRODUCT_BUNDLE_IDENTIFIER` environment variable that Xcode usually deals with. For example, like this:
@@ -96,6 +100,8 @@ PRODUCT_BUNDLE_IDENTIFIER=<your_bundle_id> /bin/bash -c "$(curl -fsSL https://po
 ```
 
 > `<workdir_path>` and `<files_to_translate>` are optional parameters here.
+
+Now you can try [adding languages to the project](#adding-a-new-localization).
 
 ### Option 4. GitHub Actions
 
@@ -173,6 +179,8 @@ jobs:
           git push
 ```
 
+Now you can try [adding languages to the project](#adding-a-new-localization).
+
 ### Option 5. Docker
 
 Polyglot can also be used with Docker. To get started, pull the image from the repository by running the following command:
@@ -199,9 +207,7 @@ docker run --rm \
 1. Docker uses absolute paths in volume mappings.
 2. You cannot omit the `<workdir_path>` parameter here, since you must explicitly specify volume for Docker.
 
-## Support
-
-### How do I add a new localization?
+## Adding a new localization
 
 To add a new localization, follow these steps:
 
@@ -213,9 +219,11 @@ To add a new localization, follow these steps:
 6. Select the language and region you want to add.
 7. Xcode will generate a new `.strings` file for the new localization.
 
-Now Polyglot will see this file and translate your lines from the base language to the new one too.
+Now Polyglot will see this file and translate your lines from English language to the new one too.
 
 ![Locale](.images/support/locale.png)
+
+## Support
 
 ### In which file do I need to write strings for translation?
 
