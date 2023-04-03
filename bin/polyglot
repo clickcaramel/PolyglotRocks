@@ -277,7 +277,8 @@ if [ -z $product_id ] ; then
 fi
 
 if [ -z "$files_to_translate" ] ; then
-    files_to_translate="Localizable.strings"
+    files_to_translate=$(find "$project_path" -name '*.strings' -type f 2>/dev/null | xargs basename -a | sort | uniq | paste -sd ',' -)
+    files_to_translate=${files_to_translate:-"Localizable.strings"}
 fi
 
 OLDIFS=$IFS
