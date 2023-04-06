@@ -305,7 +305,7 @@ if [ -z $langs_path ]; then
 fi
 
 escaped_langs_path="`escape_for_sed $langs_path`"
-all_languages=`ls -d $langs_path/*.lproj | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//' -e 's/Base//' | sort`
+all_languages=`ls -d $langs_path/*.lproj | grep -v 'Base\.lproj' | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//' | sort`
 
 if [ "$all_languages" = "en" ]; then
     warning "Only the English localization was found. To add other languages, follow the documentation: [$support_url]"
@@ -319,6 +319,11 @@ main() {
 
     # checking for duplicates
     base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
+    
+    if [ ! -f "$base_file" ]; then
+        return 0
+    fi
+
     base_file_content=`get_strings_from_file $base_file | grep -v 'polyglot:disable:this'`
     base_file_full_content=`grep -e '=' -e "$comment_regex" $base_file | grep -v 'polyglot:disable:this'`
 
