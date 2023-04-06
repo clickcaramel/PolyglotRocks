@@ -394,7 +394,7 @@ main() {
         fill_translations_map 'manual' "$prev_translations_file" "$new_translations_file"
     fi
 
-    base_file_lines=`echo "$base_file_content" | wc -l`
+    base_file_lines=`echo "$base_file_content" | grep -v '^$' | wc -l`
     base_file_str_ids=`echo "$base_file_content" | cut -d '=' -f 1`
     new_languages=`echo "$all_languages" | sed -e "s/$base_language//"`
 
@@ -415,7 +415,7 @@ main() {
         echo ''
         info "Processing $file"
         file_content=`get_strings_from_file $file`
-        file_lines=`echo "$file_content" | wc -l`
+        file_lines=`echo "$file_content" | grep -v '^$' | wc -l`
         new_strings=true
         description=''
 
