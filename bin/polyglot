@@ -50,7 +50,7 @@ support_url='https://github.com/clickcaramel/PolyglotRocks#support'
 product_id=$PRODUCT_BUNDLE_IDENTIFIER
 base_language='en'
 comment_regex='^\s*//.*'
-line_regex='^[[:space:]]*"([^"]+)"[[:space:]]*=[[:space:]]*"([^"]+)";[[:space:]]*$'
+line_regex='^[[:space:]]*"([^"]+)"[[:space:]]*=[[:space:]]*".*";[[:space:]]*$'
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -181,6 +181,10 @@ escape_for_grep() {
     sed 's/[][\.|$(){}?+*^]/&/g' <<< "$*"
 }
 
+escape_line_breaks() {
+    echo "$1" | sed -e 's/\\n/\\\\n/g'
+}
+
 response_to_js_map() {
     escaped_quote='\\"'
     quote="'"
@@ -214,8 +218,9 @@ fill_translations_map() {
         while IFS="=" read -r key value
         do
             set_translation "$1" "$id" "$key" "$value"
-        done < <(echo $item | jq -rc '.value|to_entries|map("\(.key)=\(.value.value)") | .[]')
-    done < <(echo "$data")
+        done < <(escape_line_breaks "$item" | jq -rc '.value|to_entries|map("\(.key)=\(.value.value)") | .[]')
+
+    done < <(escape_line_breaks "$data")
 }
 
 translate_string() {
@@ -466,7 +471,7 @@ main() {
 
             id=`echo $line | cut -d '=' -f 1`
             id=`echo ${id//\"}`
-            base_value=`echo $line | cut -d '=' -f 2`
+            base_value=`echo "$line" | cut -d '=' -f 2`
             base_value=`echo ${base_value//\"} | sed -e 's/;[ 	]*\/\/.*/;/'`
             base_value=`echo ${base_value//;}`
             manual_translation=`get_translation 'manual' "$id" "$language"`
@@ -547,7 +552,7 @@ main() {
             fi
 
             description=''
-        done < <(echo "$base_file_full_content")
+        done < <(escape_line_breaks "$base_file_full_content")
     done
 }
 

@@ -247,3 +247,11 @@ test_use_complex_comment() {
     assert_equals 3 `echo "$escaped_descr" | wc -l`
     assert_equals "$descr_from_comment" "$escaped_descr"
 }
+
+test_translate_string_with_spec_chars() {
+    path="$translations_path/en.lproj/$file_name";
+    echo '"with_spec_chars" = "string with\nspecial\n chars, now";' > $path
+    output=`$script $tenant_token -p ../$app_name`
+    translation=`grep 'with_spec_chars' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
+    assert_equals " \"Zeichenkette mit\nspeziellen\n Zeichen, jetzt\";" "$translation"
+}
