@@ -55,9 +55,9 @@ pod 'PolyglotRocks'
 
 Then, run `pod install` to install the library.
 
-To use Polyglot in your Xcode project, add the following command to the build phase:
+To use Polyglot in your Xcode project, before the build phase named **Copy Bundle Resources**, add a new one with the following command:
 
-```plain
+```bash
 "${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your_token>
 ```
 
@@ -73,7 +73,7 @@ Now you can try [adding languages to the project](#adding-a-new-localization).
 
 ### Option 2. cURL (Xcode)
 
-To run Polyglot on your local machine with Xcode, you can use a special script via cURL. To do this, add the following code to a build phase in your Xcode project:
+To run Polyglot on your local machine with Xcode, you can use a special script via cURL. To do this, before the build phase named **Copy Bundle Resources**, add a new one with the following command:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token>
