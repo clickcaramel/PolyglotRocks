@@ -127,12 +127,12 @@ test_load_manual_translations() {
 
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
-    assert_equals $translation '"de-manual-test";'
+    assert_equals "$translation" ' "de-manual-test"; // corrected by a human'
     translation=`grep 'disabled_globally' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     assert_equals $translation '"this-shouldnt-change";'
 
     custom_translation=`grep 'CUSTOM_STRING' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
-    assert_equals $custom_translation '"fr-custom-test";'
+    assert_equals "$custom_translation" ' "fr-custom-test"; // corrected by a human'
     custom_translation=`grep 'CUSTOM_STRING' $translations_path/de.lproj/$file_name | sed -e 's/;[ 	]*\/\/.*/;/' | cut -d '=' -f 2`
     assert_equals $custom_translation '"disabled";'
 }

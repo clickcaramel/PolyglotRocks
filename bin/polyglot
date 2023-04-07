@@ -480,7 +480,7 @@ main() {
             disabled_translation="`(echo $line ; grep \"$escaped_old_record\" $file) | grep "polyglot:disable:this"`"
 
             if [ -n "$manual_translation" ]; then
-                new_record="\"$id\" = \"$manual_translation\";"
+                new_record="\"$id\" = \"$manual_translation\"; // corrected by a human"
                 escaped_new_record=`escape_for_grep "$new_record"`
                 description=''
 
