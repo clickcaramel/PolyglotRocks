@@ -51,6 +51,8 @@ product_id=$PRODUCT_BUNDLE_IDENTIFIER
 base_language='en'
 comment_regex='^\s*//.*'
 line_regex='^[[:space:]]*"([^"]+)"[[:space:]]*=[[:space:]]*".*";[[:space:]]*$'
+escaped_quote='\\"'
+quote_placeholder='\*\^\*'
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -186,9 +188,7 @@ escape_line_breaks() {
 }
 
 response_to_js_map() {
-    escaped_quote='\\"'
-    quote="'"
-    fixed_response=`echo "$1" | sed -e "s/$escaped_quote/$quote/g"`
+    fixed_response=`echo "$1" | sed -e "s/$escaped_quote/$quote_placeholder/g"`
     echo "$fixed_response" | jq -r 'del(.[].description?, .[].translations.en?) | map( { (.stringId|tostring): .translations } ) | add | del(.[].stringId)'
 }
 
@@ -218,14 +218,14 @@ fill_translations_map() {
         while IFS="=" read -r key value
         do
             set_translation "$1" "$id" "$key" "$value"
-        done < <(escape_line_breaks "$item" | jq -rc '.value|to_entries|map("\(.key)=\(.value.value)") | .[]')
+        done < <(escape_line_breaks "$item" | jq -rc '.value|to_entries|map("\(.key)=\(.value.value)") | .[]' | sed -e "s/$quote_placeholder/$escaped_quote/g")
 
     done < <(escape_line_breaks "$data")
 }
 
 translate_string() {
     id="$1"
-    value="$2"
+    value=`echo "$2" | sed -e 's/"/\\\"/g'`
     descr=`echo "$3" | sed -e 's/"/\\\"/g'`
     encoded_id=`echo "$id" | sed -e "s/\%/\%25"/g`
     encoded_id=`echo "$encoded_id" | jq -Rr @uri`
@@ -472,7 +472,7 @@ main() {
             id=`echo $line | cut -d '=' -f 1`
             id=`echo ${id//\"}`
             base_value=`echo "$line" | cut -d '=' -f 2`
-            base_value=`echo ${base_value//\"} | sed -e 's/;[ 	]*\/\/.*/;/'`
+            base_value=`echo "$base_value" | sed -e 's/;[ 	]*\/\/.*/;/' -e 's/\"//' -e 's/\";$/;/'`
             base_value=`echo ${base_value//;}`
             manual_translation=`get_translation 'manual' "$id" "$language"`
             old_record="\"$id\" = "

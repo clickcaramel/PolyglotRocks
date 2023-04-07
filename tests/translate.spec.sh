@@ -250,8 +250,8 @@ test_use_complex_comment() {
 
 test_translate_string_with_spec_chars() {
     path="$translations_path/en.lproj/$file_name";
-    echo '"with_spec_chars" = "string with\nspecial\n chars, now";' > $path
+    echo '"with_spec_chars" = "string with\nspecial\n \"chars\", now";' > $path
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'with_spec_chars' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
-    assert_equals " \"Zeichenkette mit\nspeziellen\n Zeichen, jetzt\";" "$translation"
+    assert_multiple ' "Zeichenkette mit\nspeziellem\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziellen\n \"Zeichen\", jetzt";' "$translation"
 }
