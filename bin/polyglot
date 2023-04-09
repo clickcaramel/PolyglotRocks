@@ -475,6 +475,10 @@ main() {
             base_value=`echo ${base_value//\"} | sed -e 's/;[ 	]*\/\/.*/;/'`
             base_value=`echo ${base_value//;}`
             manual_translation=`get_translation 'manual' "$id" "$language"`
+            saved_base_value=`get_translation 'manual' "$id" "en"`
+            if [ -n "$manual_translation" ] && [ "$saved_base_value" != "$base_value" ] ; then
+                manual_translation=""
+            fi
             old_record="\"$id\" = "
             escaped_old_record=`escape_for_grep "$old_record"`
             disabled_translation="`(echo $line ; grep \"$escaped_old_record\" $file) | grep "polyglot:disable:this"`"
@@ -513,6 +517,11 @@ main() {
             fi
 
             auto_translation=`get_translation 'auto' "$id" "$language"`
+
+            if [ -n "$auto_translation" ] && [ "$saved_base_value" != "$base_value" ] ; then
+                info "Seems like English string is changed for '$id' so we're starting translations from scratch for this string."
+                auto_translation=""
+            fi
 
             if [ -z "$auto_translation" ]; then
                 info "Getting auto-translations for \"$id\""
