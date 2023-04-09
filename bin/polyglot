@@ -519,7 +519,6 @@ main() {
             auto_translation=`get_translation 'auto' "$id" "$language"`
 
             if [ -n "$auto_translation" ] && [ "$saved_base_value" != "$base_value" ] ; then
-                info "Seems like English string is changed for '$id' so we're starting translations from scratch for this string."
                 auto_translation=""
             fi
 
