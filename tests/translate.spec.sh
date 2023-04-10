@@ -17,7 +17,8 @@ initial_data='"Cancel" = "Cancel";
 "4K" = "4K";
 "Loading" = "Loading...";
 "CUSTOM_STRING" = "Custom";
-"disabled_globally = "disabled_completely"; // polyglot:disable:this'
+"disabled_globally = "disabled_completely"; // polyglot:disable:this
+"CHANGED_STRING" = "New value";'
 
 cache_root="/tmp"
 if [ -n "$GITHUB_HEAD_REF" ]; then
@@ -41,6 +42,7 @@ local_env_init() {
 }
 
 clear_db() {
+    curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/CHANGED_STRING" -s >> /dev/null
     curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/CUSTOM_STRING" -s >> /dev/null
     curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/Cancel" -s >> /dev/null
     curl -X DELETE -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$1/strings/Loading" -s >> /dev/null
@@ -106,16 +108,19 @@ test_found_duplicates() {
 
 test_auto_translation() {
     setup_suite
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/CHANGED_STRING" -d "{ \"translations\": { \"en\": \"Old-value\", \"fr\": \"Old-fr-value\", \"de\": \"Old-de-value\" } }" -s >> /dev/null
     output="`$script $tenant_token -p ../$app_name`"
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     custom_translation=`grep 'Loading' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     marked_translation=`grep '4K' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
+    changed_translation=`grep 'CHANGED_STRING' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/4K" -s | jq -r '.description'`
 
     assert_multiple "Stornieren" "Abbrechen" "$translation"
     assert_equals ' "4K"; // translation is identical to the English string' "$marked_translation"
     assert_equals '"custom-translation";' $custom_translation
     assert_equals 'some comment = 0' "$description"
+    assert_not_equals ' "Old-fr-value";' "$changed_translation"
 }
 
 test_load_manual_translations() {
