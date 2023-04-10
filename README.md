@@ -12,23 +12,21 @@ The tool uses English localization as the basis for translations.
 
 ## Contents
 
-- [Polyglot](#polyglot)
-  - [Contents](#contents)
-  - [Vocabulary](#vocabulary)
-  - [Integration options](#integration-options)
+- [Vocabulary](#vocabulary)
+- [Integration options](#integration-options)
     - [Option 1. CocoaPods](#option-1-cocoapods)
     - [Option 2. cURL (Xcode)](#option-2-curl-xcode)
     - [Option 3. cURL (Manually)](#option-3-curl-manually)
     - [Option 4. GitHub Actions](#option-4-github-actions)
     - [Option 5. Docker](#option-5-docker)
-  - [Adding a new localization](#adding-a-new-localization)
-  - [Support](#support)
+- [Adding a new localization](#adding-a-new-localization)
+- [Support](#support)
     - [In which file do I need to write strings for translation?](#in-which-file-do-i-need-to-write-strings-for-translation)
     - [Should I use Base localization or English?](#should-i-use-base-localization-or-english)
     - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
     - [How I stop Polyglot from translating specific strings?](#how-i-stop-polyglot-from-translating-specific-strings)
     - [How to add manual translations independently?](#how-to-add-manual-translations-independently)
-  - [License](#license)
+- [License](#license)
 
 ## Vocabulary
 

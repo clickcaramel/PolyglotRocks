@@ -132,12 +132,12 @@ test_load_manual_translations() {
 
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
-    assert_equals $translation '"de-manual-test";'
+    assert_equals "$translation" ' "de-manual-test"; // corrected by a human'
     translation=`grep 'disabled_globally' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     assert_equals $translation '"this-shouldnt-change";'
 
     custom_translation=`grep 'CUSTOM_STRING' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
-    assert_equals $custom_translation '"fr-custom-test";'
+    assert_equals "$custom_translation" ' "fr-custom-test"; // corrected by a human'
     custom_translation=`grep 'CUSTOM_STRING' $translations_path/de.lproj/$file_name | sed -e 's/;[ 	]*\/\/.*/;/' | cut -d '=' -f 2`
     assert_equals $custom_translation '"disabled";'
 }
@@ -251,4 +251,12 @@ test_use_complex_comment() {
 
     assert_equals 3 `echo "$escaped_descr" | wc -l`
     assert_equals "$descr_from_comment" "$escaped_descr"
+}
+
+test_translate_string_with_spec_chars() {
+    path="$translations_path/en.lproj/$file_name";
+    echo '"with_spec_chars" = "string with\nspecial\n \"chars\", now";' > $path
+    output=`$script $tenant_token -p ../$app_name`
+    translation=`grep 'with_spec_chars' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
+    assert_multiple ' "Zeichenkette mit\nspeziellem\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziellen\n \"Zeichen\", jetzt";' "$translation"
 }
