@@ -72,7 +72,7 @@ Optionally, you can set the `-f` parameter to specify the file names for transla
 "${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your_token> -f <files_to_translate>
 ```
 
-Now you can try [adding languages to the project](#adding-a-new-localization).
+Now you can try [adding languages to the project](#adding-a-new-localization). For more details, you can go through a tutorial on using [Polyglot with an Xcode project](https://github.com/clickcaramel/PolyglotRocks/wiki/Use-Polyglot-with-Xcode-project).
 
 ### Option 2. cURL (Xcode)
 
@@ -93,7 +93,7 @@ Optionally, you can set the `-f` parameter to specify the file names for transla
 /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token> -f <files_to_translate>
 ```
 
-Now you can try [adding languages to the project](#adding-a-new-localization).
+Now you can try [adding languages to the project](#adding-a-new-localization). For more details, you can go through a tutorial on using [Polyglot with an Xcode project](https://github.com/clickcaramel/PolyglotRocks/wiki/Use-Polyglot-with-Xcode-project).
 
 ### Option 3. cURL (Manually)
 
@@ -246,6 +246,8 @@ Each line is translated separately in order to conveniently maintain the context
 PolyglotRocks for translation takes as a basis the lines that are written in the `.strings` file (by default, `Localizable.strings`) and lie in the `en.lproj` directory (English localization). Then it translates them into other languages, the support of which (or the presence of the corresponding `.lproj` directory) is in the project.
 
 Since the tool uses English localization as the basis for translations, you can initially keep other localization files empty, and it will fill them in by itself.
+
+For more details, you can go through a tutorial on using [Polyglot with an Xcode project](https://github.com/clickcaramel/PolyglotRocks/wiki/Use-Polyglot-with-Xcode-project).
 
 ### Should I use Base localization or English?
 
