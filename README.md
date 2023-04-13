@@ -1,3 +1,4 @@
+<!-- omit from toc -->
 # Polyglot
 
 <p align="left">
@@ -10,22 +11,25 @@ Polyglot is a localization tool that simplifies the translation process of your 
 
 The tool uses English localization as the basis for translations.
 
+<!-- omit from toc -->
 ## Contents
 
 - [Vocabulary](#vocabulary)
 - [Integration options](#integration-options)
-    - [Option 1. CocoaPods](#option-1-cocoapods)
-    - [Option 2. cURL (Xcode)](#option-2-curl-xcode)
-    - [Option 3. cURL (Manually)](#option-3-curl-manually)
-    - [Option 4. GitHub Actions](#option-4-github-actions)
-    - [Option 5. Docker](#option-5-docker)
+  - [Option 1. CocoaPods](#option-1-cocoapods)
+  - [Option 2. cURL (Xcode)](#option-2-curl-xcode)
+  - [Option 3. cURL (Manually)](#option-3-curl-manually)
+  - [Option 4. GitHub Actions](#option-4-github-actions)
+  - [Option 5. Docker](#option-5-docker)
 - [Adding a new localization](#adding-a-new-localization)
 - [Support](#support)
-    - [In which file do I need to write strings for translation?](#in-which-file-do-i-need-to-write-strings-for-translation)
-    - [Should I use Base localization or English?](#should-i-use-base-localization-or-english)
-    - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
-    - [How I stop Polyglot from translating specific strings?](#how-i-stop-polyglot-from-translating-specific-strings)
-    - [How to add manual translations independently?](#how-to-add-manual-translations-independently)
+  - [Are texts translated by AI or by a human?](#are-texts-translated-by-ai-or-by-a-human)
+  - [How fast will it work?](#how-fast-will-it-work)
+  - [In which file do I need to write strings for translation?](#in-which-file-do-i-need-to-write-strings-for-translation)
+  - [Should I use Base localization or English?](#should-i-use-base-localization-or-english)
+  - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
+  - [How I stop Polyglot from translating specific strings?](#how-i-stop-polyglot-from-translating-specific-strings)
+  - [How to add manual translations independently?](#how-to-add-manual-translations-independently)
 - [License](#license)
 
 ## Vocabulary
@@ -56,6 +60,7 @@ Then, run `pod install` to install the library.
 To use Polyglot in your Xcode project, before the build phase named **Copy Bundle Resources**, add a new one with the following command:
 
 ```bash
+# Somewhere before the Copy Bundle Resources phase
 "${PODS_ROOT}/PolyglotRocks/bin/polyglot" <your_token>
 ```
 
@@ -74,6 +79,7 @@ Now you can try [adding languages to the project](#adding-a-new-localization).
 To run Polyglot on your local machine with Xcode, you can use a special script via cURL. To do this, before the build phase named **Copy Bundle Resources**, add a new one with the following command:
 
 ```bash
+# Somewhere before the Copy Bundle Resources phase
 /bin/bash -c "$(curl -fsSL https://polyglot.rocks/run.sh)" - <your_token>
 ```
 
@@ -223,6 +229,18 @@ Now Polyglot will see this file and translate your lines from English language t
 
 ## Support
 
+### Are texts translated by AI or by a human?
+
+Both.
+
+Polyglot provides an opportunity to quickly get AI-powered translations of your localization strings, and then use experts to check and improve translations.
+
+### How fast will it work?
+
+Depends on the number of strings.
+
+Each line is translated separately in order to conveniently maintain the context and avoid repeated translation. Therefore, if you are using the Xcode build phase and you have quite a lot of lines, then this may slow down your build. To avoid this, we recommend using [CI/CD](#option-4-github-actions) for a large number of localization strings.
+
 ### In which file do I need to write strings for translation?
 
 PolyglotRocks for translation takes as a basis the lines that are written in the `.strings` file (by default, `Localizable.strings`) and lie in the `en.lproj` directory (English localization). Then it translates them into other languages, the support of which (or the presence of the corresponding `.lproj` directory) is in the project.
@@ -243,6 +261,7 @@ We suggest not committing translations to the git history to avoid conflicts bet
 ### How I stop Polyglot from translating specific strings?
 
 You may add `// polyglot:disable:this` comment at the end of a line containing the string you don't want Polyglot to touch:
+
 ```bash
 "CUSTOM_STRING" = "this value will not be touched by Polyglot"; // polyglot:disable:this
 ```
