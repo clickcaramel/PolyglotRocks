@@ -55,7 +55,7 @@ add_manual_translations() {
     # make sure we create auto translations
     curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/Cancel" -d "{ \"translations\": { \"en\": \"Cancel\" } }" -s >> /dev/null
     # then populate manual translations
-    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/Cancel" -d "{ \"translations\": { \"en\": \"Cancel\", \"de\": \"de-manual-test\", \"fr\": \"fr-manual-test\" } }" -s >> /dev/null
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/Cancel" -d "{ \"translations\": { \"en\": \"Cancel\", \"de\": \"de-manual-test\", \"fr\": \"fr-manual-test\" }, \"translatorComment\": \"Need too more context!\" }" -s >> /dev/null
 }
 
 setup_suite() {
@@ -132,7 +132,7 @@ test_load_manual_translations() {
 
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
-    assert_equals "$translation" ' "de-manual-test"; // corrected by a human'
+    assert_equals "$translation" ' "de-manual-test"; // translator comment: "Need too more context!"'
     translation=`grep 'disabled_globally' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     assert_equals $translation '"this-shouldnt-change";'
 
@@ -258,5 +258,5 @@ test_translate_string_with_spec_chars() {
     echo '"with_spec_chars" = "string with\nspecial\n \"chars\", now";' > $path
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'with_spec_chars' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
-    assert_multiple ' "Zeichenkette mit\nspeziellem\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziellen\n \"Zeichen\", jetzt";' "$translation"
+    assert_multiple ' "Zeichenkette mit\nspeziellen\n \"Zeichen\", jetzt";' ' "Zeichenkette mit\nspeziellem\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziell\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziellen\n \"Zeichen\", jetzt";' "$translation"
 }
