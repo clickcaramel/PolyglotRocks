@@ -127,7 +127,7 @@ else
         printf -v "$1_translations__${md5key}" %s "$4"
 
         if [ -n "$5" ] && [ "$5" != "null" ]; then
-            printf -v "$1_translators_comments__${md5key}" %s "$5"
+            printf -v "translators_comments__${md5key}" %s "$5"
         fi
     }
 
@@ -137,7 +137,7 @@ else
     }
 
     get_translator_comment() {
-        n="$1_translators_comments__`translation_key \"$2\" \"$3\"`"
+        n="translators_comments__`translation_key \"$1\" \"$2\"`"
         echo ${!n}
     }
 fi
