@@ -99,13 +99,22 @@ tenant_token="$1"
 # Declare dictionary if bash supports it
 
 declare -A translations &>/dev/null;
+declare -A translators_comments &>/dev/null;
 if [ $? -eq 0 ]; then
     set_translation() {
         translations[`echo $1_$2_$3`]="$4"
+
+        if [ -n "$5" ] && [ "$5" != "null" ]; then
+            translators_comments[`echo $2_$3`]="$5"
+        fi
     }
 
     get_translation() {
         echo ${translations[`echo $1_$2_$3`]}
+    }
+
+    get_translator_comment() {
+        echo ${translators_comments[`echo $1_$2`]}
     }
 else
     warning "Your Bash version does not support associative arrays, indexing will be slow, we recommend updating your Bash to the newer version."
@@ -116,10 +125,19 @@ else
     set_translation() {
         md5key="`translation_key \"$2\" \"$3\"`"
         printf -v "$1_translations__${md5key}" %s "$4"
+
+        if [ -n "$5" ] && [ "$5" != "null" ]; then
+            printf -v "$1_translators_comments__${md5key}" %s "$5"
+        fi
     }
 
     get_translation() {
         n="$1_translations__`translation_key \"$2\" \"$3\"`"
+        echo ${!n}
+    }
+
+    get_translator_comment() {
+        n="$1_translators_comments__`translation_key \"$2\" \"$3\"`"
         echo ${!n}
     }
 fi
@@ -215,10 +233,10 @@ fill_translations_map() {
 
     while read item ; do
         id="`echo $item | jq -r '.key'`"
-        while IFS="=" read -r key value
+        while IFS="~" read -r key value comment
         do
-            set_translation "$1" "$id" "$key" "$value"
-        done < <(escape_line_breaks "$item" | jq -rc '.value|to_entries|map("\(.key)=\(.value.value)") | .[]' | sed -e "s/$quote_placeholder/$escaped_quote/g")
+            set_translation "$1" "$id" "$key" "$value" "$comment"
+        done < <(escape_line_breaks "$item" | jq -rc '.value|to_entries|map("\(.key)~\(.value.value)~\(.value.translatorComment)") | .[]' | sed -e "s/$quote_placeholder/$escaped_quote/g")
 
     done < <(escape_line_breaks "$data")
 }
@@ -324,7 +342,7 @@ main() {
 
     # checking for duplicates
     base_file=`find "$project_path" \( -name "Pods" -o -name "Carthage" \) -prune -o -type f -print | grep "$file_to_translate" | grep en.lproj | head -1`
-    
+
     if [ ! -f "$base_file" ]; then
         return 0
     fi
@@ -490,7 +508,14 @@ main() {
             disabled_translation="`(echo $line ; grep \"$escaped_old_record\" $file) | grep "polyglot:disable:this"`"
 
             if [ -n "$manual_translation" ]; then
-                new_record="\"$id\" = \"$manual_translation\"; // corrected by a human"
+                translator_comment=`get_translator_comment "$id" "$language"`
+                manual_mark='corrected by a human'
+
+                if [ -n "$translator_comment" ]; then
+                    manual_mark="translator comment: \"$translator_comment\""
+                fi
+
+                new_record="\"$id\" = \"$manual_translation\"; // $manual_mark"
                 escaped_new_record=`escape_for_grep "$new_record"`
                 description=''
 
