@@ -15,7 +15,8 @@ initial_data='"Cancel" = "Cancel";
 // polyglot:max_length:10
 "Saved successfully" = "Saved successfully";
 // some comment = 0
-// polyglot:max_length:100
+// polyglot:max_length:none
+// polyglot:max_length
 "4K" = "4K";
 "Loading" = "Loading...";
 "CUSTOM_STRING" = "Custom";

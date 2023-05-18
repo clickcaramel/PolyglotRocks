@@ -50,6 +50,7 @@ support_url='https://github.com/clickcaramel/PolyglotRocks#support'
 product_id=$PRODUCT_BUNDLE_IDENTIFIER
 base_language='en'
 comment_regex='^\s*//.*'
+digit_regex='^[0-9]+$'
 line_regex='^[[:space:]]*"([^"]+)"[[:space:]]*=[[:space:]]*".*";[[:space:]]*$'
 escaped_quote='\\"'
 quote_placeholder='\*\^\*'
@@ -492,8 +493,13 @@ main() {
             if [ "$line" = "" ]; then
                 continue;
             elif [[ "$line" =~ $comment_regex ]]; then
-                if [ "`echo \"$line\" | grep 'polyglot:max_length:'`" ]; then
+                if [ "`echo \"$line\" | grep 'polyglot:max_length'`" ]; then
                     desired_max_length=`echo "$line" | cut -d ':' -f 3`
+
+                    if [[ ! "$desired_max_length" =~ $digit_regex ]]; then
+                        error "Invalid value for 'polyglot:max_length': \"$desired_max_length\""
+                        desired_max_length=''
+                    fi
                 else
                     description+="\n$line"
                 fi
