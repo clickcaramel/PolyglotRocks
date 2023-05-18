@@ -50,6 +50,7 @@ support_url='https://github.com/clickcaramel/PolyglotRocks#support'
 product_id=$PRODUCT_BUNDLE_IDENTIFIER
 base_language='en'
 comment_regex='^\s*//.*'
+digit_regex='^[0-9]+$'
 line_regex='^[[:space:]]*"([^"]+)"[[:space:]]*=[[:space:]]*".*";[[:space:]]*$'
 escaped_quote='\\"'
 quote_placeholder='\*\^\*'
@@ -247,8 +248,13 @@ translate_string() {
     descr=`echo "$3" | sed -e 's/"/\\\"/g'`
     encoded_id=`echo "$id" | sed -e "s/\%/\%25"/g`
     encoded_id=`echo "$encoded_id" | jq -Rr @uri`
+    max_len=null
 
-    api_response=$(curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$encoded_id" -d "{ \"translations\": { \"en\": \"$value\" }, \"description\": \"$descr\" }" -s)
+    if [ -n "$4" ]; then
+        max_len=$4
+    fi
+
+    api_response=$(curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$encoded_id" -d "{ \"translations\": { \"en\": \"$value\" }, \"description\": \"$descr\", \"desiredMaxLength\": $max_len }" -s)
 
     if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
         response_json=`response_to_js_map "[$api_response]"`
@@ -441,6 +447,7 @@ main() {
         file_lines=`echo "$file_content" | grep -v '^$' | wc -l`
         new_strings=true
         description=''
+        desired_max_length=''
 
         if [ $file_lines -eq $base_file_lines ]; then
             content_diff=`diff <(echo "$base_file_content") <(echo "$file_content")`
@@ -486,7 +493,16 @@ main() {
             if [ "$line" = "" ]; then
                 continue;
             elif [[ "$line" =~ $comment_regex ]]; then
-                description+="\n$line"
+                if [ "`echo \"$line\" | grep 'polyglot:max_length'`" ]; then
+                    desired_max_length=`echo "$line" | cut -d ':' -f 3`
+
+                    if [[ ! "$desired_max_length" =~ $digit_regex ]]; then
+                        error "Invalid value for 'polyglot:max_length': \"$desired_max_length\""
+                        desired_max_length=''
+                    fi
+                else
+                    description+="\n$line"
+                fi
                 continue;
             elif [[ ! "$line" =~ $line_regex ]]; then
                 continue;
@@ -518,6 +534,7 @@ main() {
                 new_record="\"$id\" = \"$manual_translation\"; // $manual_mark"
                 escaped_new_record=`escape_for_grep "$new_record"`
                 description=''
+                desired_max_length=''
 
                 if [ "`grep \"$escaped_new_record\" $file`" ]; then
                     continue;
@@ -541,6 +558,7 @@ main() {
             if [ "`grep \"$escaped_old_record\" $file`" ]; then
                 if [ -z "`grep -Fx \"$line\" $file`" ]; then
                     description=''
+                    desired_max_length=''
                     continue;
                 else
                     is_new_translation=false
@@ -552,8 +570,9 @@ main() {
             if [ -z "$auto_translation" ]; then
                 info "Getting auto-translations for \"$id\""
                 description=`echo "$description" | sed -e 's/\\\n[ 	]*\/\/[ ]*/\\\n/g' -e 's/^\\\n//'`
-                localisation="`translate_string \"$id\" \"$base_value\" \"$description\"`"
+                localisation="`translate_string \"$id\" \"$base_value\" \"$description\" \"$desired_max_length\"`"
                 description=''
+                desired_max_length=''
                 translation_code="`echo $?`"
                 if [ ! $translation_code -eq 0 ]; then
                     warning "$localisation"
@@ -587,6 +606,7 @@ main() {
             fi
 
             description=''
+            desired_max_length=''
         done < <(escape_line_breaks "$base_file_full_content")
     done
 }

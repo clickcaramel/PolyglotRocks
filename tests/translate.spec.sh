@@ -12,8 +12,11 @@ api_url=${API_URL:-$api_url}
 product_id='test.bash.app'
 base_file="$translations_path/en.lproj/$file_name"
 initial_data='"Cancel" = "Cancel";
+// polyglot:max_length:10
 "Saved successfully" = "Saved successfully";
 // some comment = 0
+// polyglot:max_length:none
+// polyglot:max_length
 "4K" = "4K";
 "Loading" = "Loading...";
 "CUSTOM_STRING" = "Custom";
@@ -111,12 +114,14 @@ test_auto_translation() {
     curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/CHANGED_STRING" -d "{ \"translations\": { \"en\": \"Old-value\", \"fr\": \"Old-fr-value\", \"de\": \"Old-de-value\" } }" -s >> /dev/null
     output="`$script $tenant_token -p ../$app_name`"
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
+    length_limited_translation=`grep 'Saved successfully' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     custom_translation=`grep 'Loading' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     marked_translation=`grep '4K' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
     changed_translation=`grep 'CHANGED_STRING' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/4K" -s | jq -r '.description'`
 
     assert_multiple "Stornieren" "Abbrechen" "$translation"
+    assert_multiple '"Erfolgreich";' '"Gespeichert";' "$length_limited_translation"
     assert_equals ' "4K"; // translation is identical to the English string' "$marked_translation"
     assert_equals '"custom-translation";' $custom_translation
     assert_equals 'some comment = 0' "$description"
