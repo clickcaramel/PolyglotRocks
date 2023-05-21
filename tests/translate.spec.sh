@@ -203,6 +203,7 @@ test_base_is_not_included() {
 
 test_translate_equal_strings_when_equal_line_count() {
     clear_db "$product_id"
+    echo "$initial_data" > "$translations_path/en.lproj/$file_name"
     # x2 launch for getting manual_translations_changed == false
     output=`$script $tenant_token -p ../$app_name`
     output=`$script $tenant_token -p ../$app_name`
@@ -271,10 +272,24 @@ test_restart_translation_if_descr_changed() {
     path="$translations_path/en.lproj/$file_name";
     str_with_comment='// cutlery
 "fork" = "fork";'
-    echo "$str_with_comment" >> $path
+    echo "$str_with_comment" > $path
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'fork' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/fork" -s | jq -r '.description'`
     assert_equals ' "fourchette";' "$translation"
     assert_equals 'cutlery' "$description"
+}
+
+test_restart_translation_if_max_len_changed() {
+    str_id='change_max_len_str'
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$str_id" -d "{ \"translations\": { \"en\": \"Not enough memory on your device\", \"fr\": \"Mémoire insuffisante sur votre appareil\", \"de\": \"Nicht genügend Speicher auf Ihrem Gerät\" }, \"desiredMaxLength\": 30 }" -s >> /dev/null
+    path="$translations_path/en.lproj/$file_name";
+    str_with_max_len="// polyglot:max_length:15
+\"$str_id\" = \"Not enough memory on your device\";"
+    echo "$str_with_max_len" > $path
+    output=`$script $tenant_token -p ../$app_name`
+    translation=`grep "$str_id" $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
+    max_len=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$str_id" -s | jq -r '.desiredMaxLength'`
+    assert_multiple ' "Nicht genug Speicher";' ' "Zu wenig Speicher";' "$translation"
+    assert_equals 15 $max_len
 }
