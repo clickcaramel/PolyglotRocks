@@ -151,11 +151,13 @@ else
     }
 
     set_description() {
-        printf -v "descriptions__${`calc_md5 \"$1\"`}" %s "$2"
+        md5key="`calc_md5 \"$1\"`"
+        printf -v "descriptions__${md5key}" %s "$2"
     }
 
     set_desired_max_len() {
-        printf -v "desired_max_lengths__${`calc_md5 \"$1\"`}" %s "$2"
+        md5key="`calc_md5 \"$1\"`"
+        printf -v "desired_max_lengths__${md5key}" %s "$2"
     }
 
     get_translation() {
