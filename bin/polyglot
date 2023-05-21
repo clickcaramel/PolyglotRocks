@@ -101,6 +101,7 @@ tenant_token="$1"
 
 declare -A translations &>/dev/null;
 declare -A translators_comments &>/dev/null;
+declare -A descriptions &>/dev/null;
 if [ $? -eq 0 ]; then
     set_translation() {
         translations[`echo $1_$2_$3`]="$4"
@@ -110,12 +111,20 @@ if [ $? -eq 0 ]; then
         fi
     }
 
+    set_description() {
+        descriptions["$1"]="$2"
+    }
+
     get_translation() {
         echo ${translations[`echo $1_$2_$3`]}
     }
 
     get_translator_comment() {
         echo ${translators_comments[`echo $1_$2`]}
+    }
+
+    get_description() {
+        echo ${descriptions["$1"]}
     }
 else
     warning "Your Bash version does not support associative arrays, indexing will be slow, we recommend updating your Bash to the newer version."
@@ -132,6 +141,10 @@ else
         fi
     }
 
+    set_description() {
+        printf -v "descriptions__${`calc_md5 \"$1\"`}" %s "$2"
+    }
+
     get_translation() {
         n="$1_translations__`translation_key \"$2\" \"$3\"`"
         echo ${!n}
@@ -139,6 +152,11 @@ else
 
     get_translator_comment() {
         n="translators_comments__`translation_key \"$1\" \"$2\"`"
+        echo ${!n}
+    }
+
+    get_description() {
+        n="descriptions__`calc_md5 \"$1\"`"
         echo ${!n}
     }
 fi
@@ -208,7 +226,7 @@ escape_line_breaks() {
 
 response_to_js_map() {
     fixed_response=`echo "$1" | sed -e "s/$escaped_quote/$quote_placeholder/g"`
-    echo "$fixed_response" | jq -r 'del(.[].description?) | map( { (.stringId|tostring): .translations } ) | add | del(.[].stringId)'
+    echo "$fixed_response" | jq -r 'map( { (.stringId|tostring): (.translations + {description: .description}) } ) | add | del(.[].stringId)'
 }
 
 calc_md5() {
@@ -234,10 +252,12 @@ fill_translations_map() {
 
     while read item ; do
         id="`echo $item | jq -r '.key'`"
+        description="`echo $item | jq -r '.value.description?'`"
+        set_description "$id" "$description"
         while IFS="~" read -r key value comment
         do
             set_translation "$1" "$id" "$key" "$value" "$comment"
-        done < <(escape_line_breaks "$item" | jq -rc '.value|to_entries|map("\(.key)~\(.value.value)~\(.value.translatorComment)") | .[]' | sed -e "s/$quote_placeholder/$escaped_quote/g")
+        done < <(escape_line_breaks "$item" | jq -rc '.value|del(.description)|to_entries|map("\(.key)~\(.value.value)~\(.value.translatorComment?)") | .[]' | sed -e "s/$quote_placeholder/$escaped_quote/g")
 
     done < <(escape_line_breaks "$data")
 }
@@ -373,7 +393,6 @@ main() {
     [ -f "$prev_translations_file" ] || echo "{}" > "$prev_translations_file"
 
     info "Downloading translations from the server"
-
     api_response=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings?manual=true" -s)
 
     case `echo $api_response | jq -r '.message?'` in
@@ -514,11 +533,19 @@ main() {
             base_value=`echo "$base_value" | sed -e 's/;[ 	]*\/\/.*/;/' -e 's/\"//' -e 's/\";$/;/'`
             base_value=`echo ${base_value//;}`
             manual_translation=`get_translation 'manual' "$id" "$language"`
-            saved_base_value=`get_translation 'manual' "$id" "en"`
-            if [ -n "$manual_translation" ] && [ "$saved_base_value" != "$base_value" ] ; then
-                info "Seems like English string is changed for '$id' so we're starting translations from scratch for this string."
-                manual_translation=""
+            if [ -n "$manual_translation" ]; then
+                saved_base_value=`get_translation 'manual' "$id" "en"`
+                prev_description=`get_description "$id"`
+
+                if [ "$saved_base_value" != "$base_value" ]; then
+                    info "Seems like English string is changed for '$id' so we're starting translations from scratch for this string."
+                    manual_translation=''
+                elif [ "$prev_description" != "$description" ]; then
+                    info "Seems like description is changed for '$id' so we're starting translations from scratch for this string."
+                    manual_translation=''
+                fi
             fi
+
             old_record="\"$id\" = "
             escaped_old_record=`escape_for_grep "$old_record"`
             disabled_translation="`(echo $line ; grep \"$escaped_old_record\" $file) | grep "polyglot:disable:this"`"
