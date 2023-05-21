@@ -274,6 +274,21 @@ Just add your translation to the desired localization file. If Polyglot encounte
 
 But please note that if you have [premium](https://polyglot.rocks/#pricing) plan and you added your translation before AI-translation - you won't get our manual translation. If you want to replace your translation with the manual one, just delete the line with it from the localization file. The next time you run Polyglot, it will process this line as usual.
 
+### How I can limit the translation length?
+
+You can use `// polyglot:max_length:<number>` comment before the line. As an argument, specify the maximum length of the translation in characters. For example:
+
+```bash
+// polyglot:max_length:15
+"Saved successfully" = "Saved successfully";
+```
+
+AI will take this into account when translating, but there is no guarantee that it will fulfill the condition. The human will try to translate with the condition in mind. If he does not succeed, he will leave a comment along with the translation option as to why it is not possible. You will see the comment at the end of the translation line:
+
+```bash
+"CUSTOM_STRING" = "Personnalisé"; // translator comment: "Condition is too hard"
+```
+
 We hope this helps! If you have any other questions, please do not hesitate to ask.
 
 ## License
