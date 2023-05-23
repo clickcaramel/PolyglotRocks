@@ -290,6 +290,6 @@ test_restart_translation_if_max_len_changed() {
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep "$str_id" $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     max_len=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$str_id" -s | jq -r '.desiredMaxLength'`
-    assert_multiple ' "Nicht genug Speicher";' ' "Zu wenig Speicher";' "$translation"
+    assert_multiple ' "Nicht genug Speicher.";' ' "Nicht genug Speicher";' ' "Zu wenig Speicher";' "$translation"
     assert_equals 15 $max_len
 }
