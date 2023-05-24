@@ -118,7 +118,7 @@ test_auto_translation() {
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/4K" -s | jq -r '.description'`
 
     assert_multiple "Stornieren" "Abbrechen" "$translation"
-    assert_multiple '"Erfolgreich";' '"Gespeichert";' "$length_limited_translation"
+    assert_multiple '"Gespeichert.";' '"Erfolgreich";' '"Gespeichert";' "$length_limited_translation"
     assert_equals ' "4K"; // translation is identical to the English string' "$marked_translation"
     assert_equals '"custom-translation";' $custom_translation
     assert_equals 'some comment = 0' "$description"
@@ -198,7 +198,7 @@ test_base_is_not_included() {
 }
 
 test_translate_equal_strings_when_equal_line_count() {
-    clear_db "$product_id"
+    setup_suite
     # x2 launch for getting manual_translations_changed == false
     output=`$script $tenant_token -p ../$app_name`
     output=`$script $tenant_token -p ../$app_name`
@@ -259,7 +259,7 @@ test_translate_string_with_spec_chars() {
     echo '"with_spec_chars" = "string with\nspecial\n \"chars\", now";' > $path
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'with_spec_chars' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
-    assert_multiple ' "Zeichenkette mit\nspeziellen\n \"Zeichen\", jetzt";' ' "Zeichenkette mit\nspeziellem\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziell\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziellen\n \"Zeichen\", jetzt";' "$translation"
+    assert_multiple ' "Zeichenfolge mit\nspeziellen\n\"Zeichen\", jetzt";' ' "Zeichenkette mit\nspeziellen\n \"Zeichen\", jetzt";' ' "Zeichenkette mit\nspeziellem\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziell\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziellen\n \"Zeichen\", jetzt";' "$translation"
 }
 
 test_restart_translation_if_src_str_changed() {
@@ -271,5 +271,5 @@ test_restart_translation_if_src_str_changed() {
     echo "\"CHANGED_STRING\" = \"$old_fr_value\";" > $fr_path;
     output=`$script $tenant_token -p ../$app_name`
     changed_translation=`grep 'CHANGED_STRING' $fr_path | cut -d '=' -f 2`
-    assert_not_equals ' "Old-fr-value";' "$changed_translation"
+    assert_not_equals " \"$old_fr_value\";" "$changed_translation"
 }

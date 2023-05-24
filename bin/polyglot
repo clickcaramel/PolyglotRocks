@@ -606,7 +606,7 @@ main() {
                 fi
 
                 new_value=`escape_for_sed "$new_line"`
-                sed -ir '' -e "s/$escaped_old_record.*/$new_value/" "$file" 2> /dev/null
+                sed -Ei '' -e "s/$escaped_old_record.*/$new_value/" "$file" 2> /dev/null
             fi
 
             description=''
