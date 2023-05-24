@@ -515,10 +515,14 @@ main() {
             base_value=`echo ${base_value//;}`
             manual_translation=`get_translation 'manual' "$id" "$language"`
             saved_base_value=`get_translation 'manual' "$id" "en"`
+            is_src_str_changed=false
+
             if [ -n "$manual_translation" ] && [ "$saved_base_value" != "$base_value" ] ; then
                 info "Seems like English string is changed for '$id' so we're starting translations from scratch for this string."
                 manual_translation=""
+                is_src_str_changed=true
             fi
+
             old_record="\"$id\" = "
             escaped_old_record=`escape_for_grep "$old_record"`
             disabled_translation="`(echo $line ; grep \"$escaped_old_record\" $file) | grep "polyglot:disable:this"`"
@@ -556,7 +560,7 @@ main() {
             is_new_translation=true
 
             if [ "`grep \"$escaped_old_record\" $file`" ]; then
-                if [ -z "`grep -Fx \"$line\" $file`" ]; then
+                if [ -z "`grep -Fx \"$line\" $file`" ] && [ $is_src_str_changed = false ]; then
                     description=''
                     desired_max_length=''
                     continue;
@@ -594,7 +598,7 @@ main() {
             if [ $is_new_translation = true ]; then
                 echo "\"$id\" = \"$auto_translation\";" >> $file
             else
-                old_value=`escape_for_sed "$line"`
+                escaped_old_record=`escape_for_sed "$old_record"`
                 new_line="\"$id\" = \"$auto_translation\";"
 
                 if [ "$base_value" = "$auto_translation" ]; then
@@ -602,7 +606,7 @@ main() {
                 fi
 
                 new_value=`escape_for_sed "$new_line"`
-                sed -i '' -e "s/$old_value/$new_value/" "$file" 2> /dev/null
+                sed -ir '' -e "s/$escaped_old_record.*/$new_value/" "$file" 2> /dev/null
             fi
 
             description=''

@@ -20,8 +20,7 @@ initial_data='"Cancel" = "Cancel";
 "4K" = "4K";
 "Loading" = "Loading...";
 "CUSTOM_STRING" = "Custom";
-"disabled_globally = "disabled_completely"; // polyglot:disable:this
-"CHANGED_STRING" = "New value";'
+"disabled_globally = "disabled_completely"; // polyglot:disable:this'
 
 cache_root="/tmp"
 if [ -n "$GITHUB_HEAD_REF" ]; then
@@ -111,13 +110,11 @@ test_found_duplicates() {
 
 test_auto_translation() {
     setup_suite
-    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/CHANGED_STRING" -d "{ \"translations\": { \"en\": \"Old-value\", \"fr\": \"Old-fr-value\", \"de\": \"Old-de-value\" } }" -s >> /dev/null
     output="`$script $tenant_token -p ../$app_name`"
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     length_limited_translation=`grep 'Saved successfully' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     custom_translation=`grep 'Loading' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     marked_translation=`grep '4K' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
-    changed_translation=`grep 'CHANGED_STRING' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/4K" -s | jq -r '.description'`
 
     assert_multiple "Stornieren" "Abbrechen" "$translation"
@@ -125,7 +122,6 @@ test_auto_translation() {
     assert_equals ' "4K"; // translation is identical to the English string' "$marked_translation"
     assert_equals '"custom-translation";' $custom_translation
     assert_equals 'some comment = 0' "$description"
-    assert_not_equals ' "Old-fr-value";' "$changed_translation"
 }
 
 test_load_manual_translations() {
@@ -264,4 +260,16 @@ test_translate_string_with_spec_chars() {
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep 'with_spec_chars' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     assert_multiple ' "Zeichenkette mit\nspeziellen\n \"Zeichen\", jetzt";' ' "Zeichenkette mit\nspeziellem\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziell\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziellen\n \"Zeichen\", jetzt";' "$translation"
+}
+
+test_restart_translation_if_src_str_changed() {
+    fr_path="$translations_path/fr.lproj/$file_name";
+    old_fr_value='Old-fr-value'
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/CHANGED_STRING" -d "{ \"translations\": { \"en\": \"Old-value\", \"fr\": \"$old_fr_value\", \"de\": \"Old-de-value\" } }" -s >> /dev/null
+    echo '"CHANGED_STRING" = "New value";' > "$translations_path/en.lproj/$file_name";
+    echo '"CHANGED_STRING" = "Old-de-value";' > "$translations_path/de.lproj/$file_name";
+    echo "\"CHANGED_STRING\" = \"$old_fr_value\";" > $fr_path;
+    output=`$script $tenant_token -p ../$app_name`
+    changed_translation=`grep 'CHANGED_STRING' $fr_path | cut -d '=' -f 2`
+    assert_not_equals ' "Old-fr-value";' "$changed_translation"
 }
