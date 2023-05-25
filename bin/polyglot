@@ -559,6 +559,7 @@ main() {
             base_value=`echo "$base_value" | sed -e 's/;[ 	]*\/\/.*/;/' -e 's/\"//' -e 's/\";$/;/'`
             base_value=`echo ${base_value//;}`
             manual_translation=`get_translation 'manual' "$id" "$language"`
+            is_src_str_changed=false
 
             if [ -n "$manual_translation" ]; then
                 saved_base_value=`get_translation 'manual' "$id" "en"`
@@ -568,6 +569,7 @@ main() {
                 if [ "$saved_base_value" != "$base_value" ]; then
                     restart_translation_info 'source string' "$id"
                     manual_translation=''
+                    is_src_str_changed=true
                 elif [ "$prev_description" != "$description" ]; then
                     restart_translation_info 'description' "$id"
                     manual_translation=''
@@ -614,7 +616,7 @@ main() {
             is_new_translation=true
 
             if [ "`grep \"$escaped_old_record\" $file`" ]; then
-                if [ -z "`grep -Fx \"$line\" $file`" ]; then
+                if [ -z "`grep -Fx \"$line\" $file`" ] && [ $is_src_str_changed = false ]; then
                     description=''
                     desired_max_length=''
                     continue;
@@ -652,7 +654,7 @@ main() {
             if [ $is_new_translation = true ]; then
                 echo "\"$id\" = \"$auto_translation\";" >> $file
             else
-                old_value=`escape_for_sed "$line"`
+                escaped_old_record=`escape_for_sed "$old_record"`
                 new_line="\"$id\" = \"$auto_translation\";"
 
                 if [ "$base_value" = "$auto_translation" ]; then
@@ -660,7 +662,7 @@ main() {
                 fi
 
                 new_value=`escape_for_sed "$new_line"`
-                sed -i '' -e "s/$old_value/$new_value/" "$file" 2> /dev/null
+                sed -Ei '' -e "s/$escaped_old_record.*/$new_value/" "$file" 2> /dev/null
             fi
 
             description=''

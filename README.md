@@ -29,7 +29,7 @@ The tool uses English localization as the basis for translations.
   - [Should I use Base localization or English?](#should-i-use-base-localization-or-english)
   - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
   - [How I stop Polyglot from translating specific strings?](#how-i-stop-polyglot-from-translating-specific-strings)
-  - [How to add manual translations independently?](#how-to-add-manual-translations-independently)
+  - [How I can limit the translation length?](#how-i-can-limit-the-translation-length)
 - [License](#license)
 
 ## Vocabulary
@@ -267,12 +267,6 @@ You may add `// polyglot:disable:this` comment at the end of a line containing t
 ```bash
 "CUSTOM_STRING" = "this value will not be touched by Polyglot"; // polyglot:disable:this
 ```
-
-### How to add manual translations independently?
-
-Just add your translation to the desired localization file. If Polyglot encounters a string that is different from the one in the base language file, it will ignore it.
-
-But please note that if you have [premium](https://polyglot.rocks/#pricing) plan and you added your translation before AI-translation - you won't get our manual translation. If you want to replace your translation with the manual one, just delete the line with it from the localization file. The next time you run Polyglot, it will process this line as usual.
 
 ### How I can limit the translation length?
 
