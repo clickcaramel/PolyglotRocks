@@ -279,14 +279,14 @@ test_restart_translation_if_max_len_changed() {
     str_id='change_max_len_str'
     curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$str_id" -d "{ \"translations\": { \"en\": \"Not enough memory on your device\", \"fr\": \"Mémoire insuffisante sur votre appareil\", \"de\": \"Nicht genügend Speicher auf Ihrem Gerät\" }, \"desiredMaxLength\": 30 }" -s >> /dev/null
     path="$translations_path/en.lproj/$file_name";
-    str_with_max_len="// polyglot:max_length:15
+    str_with_max_len="// polyglot:max_length:12
 \"$str_id\" = \"Not enough memory on your device\";"
     echo "$str_with_max_len" > $path
     output=`$script $tenant_token -p ../$app_name`
     translation=`grep "$str_id" $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     max_len=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$str_id" -s | jq -r '.desiredMaxLength'`
     assert_multiple ' "Nicht genug Speicher.";' ' "Nicht genug Speicher";' ' "Zu wenig Speicher";' "$translation"
-    assert_equals 15 $max_len
+    assert_equals 12 $max_len
 }
 
 test_restart_translation_if_src_str_changed() {
@@ -299,4 +299,15 @@ test_restart_translation_if_src_str_changed() {
     output=`$script $tenant_token -p ../$app_name`
     changed_translation=`grep 'CHANGED_STRING' $fr_path | cut -d '=' -f 2`
     assert_not_equals " \"$old_fr_value\";" "$changed_translation"
+}
+
+test_ignore_comments_for_developers() {
+    path="$translations_path/en.lproj/$file_name";
+    echo '//  MARK: common
+/// developer comment
+// just description
+"dev_comments" = "comments for developers";' > $path
+    output=`$script $tenant_token -p ../$app_name`
+    description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/dev_comments" -s | jq -r '.description'`
+    assert_equals 'just description' "$description"
 }
