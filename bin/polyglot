@@ -101,6 +101,8 @@ tenant_token="$1"
 
 declare -A translations &>/dev/null;
 declare -A translators_comments &>/dev/null;
+declare -A descriptions &>/dev/null;
+declare -A desired_max_lengths &>/dev/null;
 if [ $? -eq 0 ]; then
     set_translation() {
         translations[`echo $1_$2_$3`]="$4"
@@ -110,12 +112,28 @@ if [ $? -eq 0 ]; then
         fi
     }
 
+    set_description() {
+        descriptions["$1"]="$2"
+    }
+
+    set_desired_max_len() {
+        desired_max_lengths["$1"]="$2"
+    }
+
     get_translation() {
         echo ${translations[`echo $1_$2_$3`]}
     }
 
     get_translator_comment() {
         echo ${translators_comments[`echo $1_$2`]}
+    }
+
+    get_description() {
+        echo ${descriptions["$1"]}
+    }
+
+    get_desired_max_len() {
+        echo ${desired_max_lengths["$1"]}
     }
 else
     warning "Your Bash version does not support associative arrays, indexing will be slow, we recommend updating your Bash to the newer version."
@@ -132,6 +150,16 @@ else
         fi
     }
 
+    set_description() {
+        md5key="`calc_md5 \"$1\"`"
+        printf -v "descriptions__${md5key}" %s "$2"
+    }
+
+    set_desired_max_len() {
+        md5key="`calc_md5 \"$1\"`"
+        printf -v "desired_max_lengths__${md5key}" %s "$2"
+    }
+
     get_translation() {
         n="$1_translations__`translation_key \"$2\" \"$3\"`"
         echo ${!n}
@@ -139,6 +167,16 @@ else
 
     get_translator_comment() {
         n="translators_comments__`translation_key \"$1\" \"$2\"`"
+        echo ${!n}
+    }
+
+    get_description() {
+        n="descriptions__`calc_md5 \"$1\"`"
+        echo ${!n}
+    }
+
+    get_desired_max_len() {
+        n="desired_max_lengths__`calc_md5 \"$1\"`"
         echo ${!n}
     }
 fi
@@ -198,6 +236,10 @@ escape_for_sed() {
     echo "$1" | sed -e 's/\\/\\\\/g; s/\//\\\//g; s/&/\\\&/g'
 }
 
+restart_translation_info() {
+    echo `info "Seems like $1 is changed for '$2' so we're starting translations from scratch for this string."`
+}
+
 escape_for_grep() {
     sed 's/[][\.|$(){}?+*^]/&/g' <<< "$*"
 }
@@ -208,7 +250,7 @@ escape_line_breaks() {
 
 response_to_js_map() {
     fixed_response=`echo "$1" | sed -e "s/$escaped_quote/$quote_placeholder/g"`
-    echo "$fixed_response" | jq -r 'del(.[].description?) | map( { (.stringId|tostring): .translations } ) | add | del(.[].stringId)'
+    echo "$fixed_response" | jq -r 'map( { (.stringId|tostring): (.translations + {description: .description, desiredMaxLength: .desiredMaxLength}) } ) | add | del(.[].stringId)'
 }
 
 calc_md5() {
@@ -234,10 +276,14 @@ fill_translations_map() {
 
     while read item ; do
         id="`echo $item | jq -r '.key'`"
+        description="`echo $item | jq -r '.value.description? // empty'`"
+        max_len="`echo $item | jq -r '.value.desiredMaxLength? // empty'`"
+        set_description "$id" "$description"
+        set_desired_max_len "$id" $max_len
         while IFS="~" read -r key value comment
         do
             set_translation "$1" "$id" "$key" "$value" "$comment"
-        done < <(escape_line_breaks "$item" | jq -rc '.value|to_entries|map("\(.key)~\(.value.value)~\(.value.translatorComment)") | .[]' | sed -e "s/$quote_placeholder/$escaped_quote/g")
+        done < <(escape_line_breaks "$item" | jq -rc '.value|del(.description, .desiredMaxLength)|to_entries|map("\(.key)~\(.value.value)~\(.value.translatorComment?)") | .[]' | sed -e "s/$quote_placeholder/$escaped_quote/g")
 
     done < <(escape_line_breaks "$data")
 }
@@ -373,7 +419,6 @@ main() {
     [ -f "$prev_translations_file" ] || echo "{}" > "$prev_translations_file"
 
     info "Downloading translations from the server"
-
     api_response=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings?manual=true" -s)
 
     case `echo $api_response | jq -r '.message?'` in
@@ -514,13 +559,24 @@ main() {
             base_value=`echo "$base_value" | sed -e 's/;[ 	]*\/\/.*/;/' -e 's/\"//' -e 's/\";$/;/'`
             base_value=`echo ${base_value//;}`
             manual_translation=`get_translation 'manual' "$id" "$language"`
-            saved_base_value=`get_translation 'manual' "$id" "en"`
             is_src_str_changed=false
 
-            if [ -n "$manual_translation" ] && [ "$saved_base_value" != "$base_value" ] ; then
-                info "Seems like English string is changed for '$id' so we're starting translations from scratch for this string."
-                manual_translation=""
-                is_src_str_changed=true
+            if [ -n "$manual_translation" ]; then
+                saved_base_value=`get_translation 'manual' "$id" "en"`
+                prev_description=`get_description "$id"`
+                prev_desired_max_len=`get_desired_max_len "$id"`
+
+                if [ "$saved_base_value" != "$base_value" ]; then
+                    restart_translation_info 'source string' "$id"
+                    manual_translation=''
+                    is_src_str_changed=true
+                elif [ "$prev_description" != "$description" ]; then
+                    restart_translation_info 'description' "$id"
+                    manual_translation=''
+                elif [ "$prev_desired_max_len" != "$desired_max_length" ]; then
+                    restart_translation_info 'max-length' "$id"
+                    manual_translation=''
+                fi
             fi
 
             old_record="\"$id\" = "

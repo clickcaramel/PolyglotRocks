@@ -29,6 +29,7 @@ The tool uses English localization as the basis for translations.
   - [Should I use Base localization or English?](#should-i-use-base-localization-or-english)
   - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
   - [How I stop Polyglot from translating specific strings?](#how-i-stop-polyglot-from-translating-specific-strings)
+  - [How I can limit the translation length?](#how-i-can-limit-the-translation-length)
 - [License](#license)
 
 ## Vocabulary
@@ -265,6 +266,21 @@ You may add `// polyglot:disable:this` comment at the end of a line containing t
 
 ```bash
 "CUSTOM_STRING" = "this value will not be touched by Polyglot"; // polyglot:disable:this
+```
+
+### How I can limit the translation length?
+
+You can use `// polyglot:max_length:<number>` comment before the line. As an argument, specify the maximum length of the translation in characters. For example:
+
+```bash
+// polyglot:max_length:15
+"Saved successfully" = "Saved successfully";
+```
+
+AI will take this into account when translating, but there is no guarantee that it will fulfill the condition. The human will try to translate with the condition in mind. If he does not succeed, he will leave a comment along with the translation option as to why it is not possible. You will see the comment at the end of the translation line:
+
+```bash
+"CUSTOM_STRING" = "Personnalisé"; // translator comment: "Condition is too hard"
 ```
 
 We hope this helps! If you have any other questions, please do not hesitate to ask.

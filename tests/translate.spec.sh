@@ -262,6 +262,33 @@ test_translate_string_with_spec_chars() {
     assert_multiple ' "Zeichenfolge mit\nspeziellen\n\"Zeichen\", jetzt";' ' "Zeichenkette mit\nspeziellen\n \"Zeichen\", jetzt";' ' "Zeichenkette mit\nspeziellem\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziell\n \"Zeichen\", jetzt";' ' "Seil mit\nspeziellen\n \"Zeichen\", jetzt";' "$translation"
 }
 
+test_restart_translation_if_descr_changed() {
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/fork" -d "{ \"translations\": { \"en\": \"fork\", \"fr\": \"fourche\", \"de\": \"gabel\" }, \"description\": \"working with the Github repository\" }" -s >> /dev/null
+    path="$translations_path/en.lproj/$file_name";
+    str_with_comment='// cutlery
+"fork" = "fork";'
+    echo "$str_with_comment" > $path
+    output=`$script $tenant_token -p ../$app_name`
+    translation=`grep 'fork' $translations_path/fr.lproj/$file_name | cut -d '=' -f 2`
+    description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/fork" -s | jq -r '.description'`
+    assert_equals ' "fourchette";' "$translation"
+    assert_equals 'cutlery' "$description"
+}
+
+test_restart_translation_if_max_len_changed() {
+    str_id='change_max_len_str'
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$str_id" -d "{ \"translations\": { \"en\": \"Not enough memory on your device\", \"fr\": \"Mémoire insuffisante sur votre appareil\", \"de\": \"Nicht genügend Speicher auf Ihrem Gerät\" }, \"desiredMaxLength\": 30 }" -s >> /dev/null
+    path="$translations_path/en.lproj/$file_name";
+    str_with_max_len="// polyglot:max_length:15
+\"$str_id\" = \"Not enough memory on your device\";"
+    echo "$str_with_max_len" > $path
+    output=`$script $tenant_token -p ../$app_name`
+    translation=`grep "$str_id" $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
+    max_len=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$str_id" -s | jq -r '.desiredMaxLength'`
+    assert_multiple ' "Nicht genug Speicher.";' ' "Nicht genug Speicher";' ' "Zu wenig Speicher";' "$translation"
+    assert_equals 15 $max_len
+}
+
 test_restart_translation_if_src_str_changed() {
     fr_path="$translations_path/fr.lproj/$file_name";
     old_fr_value='Old-fr-value'
