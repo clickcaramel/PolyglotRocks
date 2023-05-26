@@ -304,7 +304,7 @@ test_restart_translation_if_src_str_changed() {
 test_ignore_comments_for_developers() {
     path="$translations_path/en.lproj/$file_name";
     echo '//  MARK: common
-/// developer comment
+/// str = developer comment
 // just description
 //FIXME: bad string
 "dev_comments" = "comments for developers";' > $path
