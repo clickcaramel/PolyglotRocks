@@ -30,6 +30,7 @@ The tool uses English localization as the basis for translations.
   - [Should I commit translations to the git history?](#should-i-commit-translations-to-the-git-history)
   - [How I stop Polyglot from translating specific strings?](#how-i-stop-polyglot-from-translating-specific-strings)
   - [How I can limit the translation length?](#how-i-can-limit-the-translation-length)
+  - [How I can add a comments that will be ignored by Polyglot?](#how-i-can-add-a-comments-that-will-be-ignored-by-polyglot)
 - [License](#license)
 
 ## Vocabulary
@@ -282,6 +283,16 @@ AI will take this into account when translating, but there is no guarantee that 
 ```bash
 "CUSTOM_STRING" = "Personnalisé"; // translator comment: "Condition is too hard"
 ```
+
+### How I can add a comments that will be ignored by Polyglot?
+
+You can use triple slash for that:
+```bash
+/// comment for my teammates
+// description of the string
+"dev_comments" = "Comments for developers";'
+```
+Also comments for Xcode that starts with `MARK:`, `FIXME:` or `TODO:` will be ignored
 
 We hope this helps! If you have any other questions, please do not hesitate to ask.
 

@@ -306,6 +306,7 @@ test_ignore_comments_for_developers() {
     echo '//  MARK: common
 /// developer comment
 // just description
+//FIXME: bad string
 "dev_comments" = "comments for developers";' > $path
     output=`$script $tenant_token -p ../$app_name`
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/dev_comments" -s | jq -r '.description'`

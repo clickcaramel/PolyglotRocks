@@ -51,7 +51,7 @@ product_id=$PRODUCT_BUNDLE_IDENTIFIER
 base_language='en'
 comment_regex='^\s*//.*'
 non_dev_comment_regex='^\s*//[^/].*'
-comment_mark_regex='^\s*//\s*MARK\s*:.*'
+comment_mark_regex='^\s*//\s*(MARK|FIXME|TODO)\s*:.*'
 digit_regex='^[0-9]+$'
 line_regex='^[[:space:]]*"([^"]+)"[[:space:]]*=[[:space:]]*".*";[[:space:]]*$'
 escaped_quote='\\"'
@@ -402,7 +402,7 @@ main() {
     fi
 
     base_file_content=`get_strings_from_file $base_file | grep -v 'polyglot:disable:this'`
-    base_file_full_content=`grep -e '=' -e "$non_dev_comment_regex" $base_file | grep -ve 'polyglot:disable:this' -ve "$comment_mark_regex"`
+    base_file_full_content=`grep -e '=' -e "$non_dev_comment_regex" $base_file | grep -ve 'polyglot:disable:this' -Eve "$comment_mark_regex"`
 
     if [ -z "$base_file_full_content" ]; then
         warning "The English localization file ($file_to_translate) is empty, there is nothing to translate. Add lines to translate there. Documentation: [$support_url]"
