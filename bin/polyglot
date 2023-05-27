@@ -276,10 +276,14 @@ fill_translations_map() {
 
     while read item ; do
         id="`echo $item | jq -r '.key'`"
-        description="`echo $item | jq -r '.value.description? // empty'`"
-        max_len="`echo $item | jq -r '.value.desiredMaxLength? // empty'`"
-        set_description "$id" "$description"
-        set_desired_max_len "$id" $max_len
+
+        if [ "$1" = 'manual' ]; then
+            description="`echo $item | jq -r '.value.description? // empty'`"
+            max_len="`echo $item | jq -r '.value.desiredMaxLength? // empty'`"
+            set_description "$id" "$description"
+            set_desired_max_len "$id" $max_len
+        fi
+
         while IFS="~" read -r key value comment
         do
             set_translation "$1" "$id" "$key" "$value" "$comment"
@@ -561,6 +565,10 @@ main() {
             manual_translation=`get_translation 'manual' "$id" "$language"`
             is_src_str_changed=false
 
+            if [ -n "$description" ]; then
+                description=`echo "$description" | sed -e 's/\\\n[ 	]*\/\/[ ]*/\\\n/g' -e 's/^\\\n//'`
+            fi
+
             if [ -n "$manual_translation" ]; then
                 saved_base_value=`get_translation 'manual' "$id" "en"`
                 prev_description=`get_description "$id"`
@@ -629,7 +637,6 @@ main() {
 
             if [ -z "$auto_translation" ]; then
                 info "Getting auto-translations for \"$id\""
-                description=`echo "$description" | sed -e 's/\\\n[ 	]*\/\/[ ]*/\\\n/g' -e 's/^\\\n//'`
                 localisation="`translate_string \"$id\" \"$base_value\" \"$description\" \"$desired_max_length\"`"
                 description=''
                 desired_max_length=''
