@@ -11,6 +11,11 @@ api_url='https://api.dev.polyglot.rocks'
 api_url=${API_URL:-$api_url}
 product_id='test.bash.app'
 base_file="$translations_path/en.lproj/$file_name"
+
+exit_code_mark='POLYGLOT_EXIT_CODE'
+translation_error_mark="$exit_code_mark: 50"
+free_plan_exhausted_mark="$exit_code_mark: 42"
+
 initial_data='"Cancel" = "Cancel";
 // polyglot:max_length:10
 "Saved successfully" = "Saved successfully";
@@ -311,4 +316,25 @@ test_ignore_comments_for_developers() {
     output=`$script $tenant_token -p ../$app_name`
     description=`curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/dev_comments" -s | jq -r '.description'`
     assert_equals 'just description' "$description"
+}
+
+test_retry_and_fail_to_get_translations() {
+    local_env_init
+    export API_URL=localhost:55555
+    export TRANSLATION_RETRIES_NUMBER=3
+    echo "$initial_data" > "$translations_path/en.lproj/$file_name"
+    output=`$script $tenant_token -p ../$app_name`
+    retries_number=`echo "$output" | grep -c 'Failed to get auto-translations. Retrying'`
+    is_exit_with_error=`echo "$output" | grep -c "$translation_error_mark"`
+    assert_equals $TRANSLATION_RETRIES_NUMBER $retries_number
+    assert_equals 1 $is_exit_with_error
+    export API_URL=$api_url
+}
+
+test_free_plan_exhausted() {
+    local_env_init
+    fake curl echo '{"paymentLinks": {"premium": "premium","unlimitedAi": "unlimitedAi"}}'
+    output=`$script $tenant_token -p ../$app_name`
+    is_exit_with_error=`echo "$output" | grep -c "$free_plan_exhausted_mark"`
+    assert_equals 1 $is_exit_with_error
 }

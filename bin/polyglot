@@ -64,6 +64,7 @@ digit_regex='^[0-9]+$'
 line_regex='^[[:space:]]*"([^"]+)"[[:space:]]*=[[:space:]]*".*";[[:space:]]*$'
 escaped_quote='\\"'
 quote_placeholder='\*\^\*'
+translation_retries_number=${TRANSLATION_RETRIES_NUMBER:-5}
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -651,7 +652,7 @@ main() {
                 i=0
                 info "Getting auto-translations for \"$id\""
 
-                while [ $i -lt 5 ] && [ -z "$localisation" ]; do
+                while [ $i -lt $translation_retries_number ] && [ -z "$localisation" ]; do
                     sleep $i
                     localisation="`translate_string \"$id\" \"$base_value\" \"$description\" \"$desired_max_length\"`"
 
