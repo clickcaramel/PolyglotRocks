@@ -46,6 +46,7 @@ api_url='https://api.polyglot.rocks'
 api_url=${API_URL:-$api_url}
 
 support_url='https://github.com/clickcaramel/PolyglotRocks#support'
+support_email='support@polyglot.rocks'
 
 product_id=$PRODUCT_BUNDLE_IDENTIFIER
 base_language='en'
@@ -317,12 +318,10 @@ translate_string() {
         echo "You've reached limits of your free plan. Subscribe to remove the limits"
         echo "Premium plan with translations by humans: [$premium_url]"
         echo "Unlimited AI plan: [$unlimited_ai_url]"
-        return 42
     else
-        echo "Something went wrong. Please contact our support team at support@polyglot.rocks. Please, provide the following information:"
+        echo "Something went wrong. Please try to restart Polyglot or contact our support team at $support_email. Please, provide the following information:"
         echo "Parameters: key=$id; encoded_id=$encoded_id; value=$value; descr=$descr"
         echo "Server Response: ${api_response}"
-        return 50
     fi
 }
 
@@ -638,25 +637,42 @@ main() {
             auto_translation=`get_translation 'auto' "$id" "$language"`
 
             if [ -z "$auto_translation" ]; then
+                localisation=''
+                error_message=''
+                i=0
                 info "Getting auto-translations for \"$id\""
-                localisation="`translate_string \"$id\" \"$base_value\" \"$description\" \"$desired_max_length\"`"
-                description=''
-                desired_max_length=''
-                translation_code="`echo $?`"
-                if [ ! $translation_code -eq 0 ]; then
-                    warning "$localisation"
-                    localisation=""
-                    if [ $translation_code -eq 42 ]; then
+
+                while [ $i -lt 5 ] && [ -z "$localisation" ]; do
+                    sleep $i
+                    localisation="`translate_string \"$id\" \"$base_value\" \"$description\" \"$desired_max_length\"`"
+
+                    if [ "`echo \"$localisation\" | grep \"$api_url\"`" ]; then
+                        echo "$localisation"
                         exit 42
                     fi
+
+                    if [ "`echo \"$localisation\" | grep \"$support_email\"`" ]; then
+                        error_message="$localisation"
+                        localisation=''
+                        error "Failed to get auto-translations. Retrying for \"$id\""
+                    fi
+
+                    (( i+= 1 ))
+                done
+
+                if [ -z "$localisation" ]; then
+                    error "Failed to get auto-translations. $error_message"
+                    exit 50
                 fi
 
-                [ -n "$localisation" ] && fill_translations_map 'auto' "$localisation"
+                fill_translations_map 'auto' "$localisation"
+                description=''
+                desired_max_length=''
                 auto_translation=`get_translation 'auto' "$id" "$language"`
 
                 if [ -z "$auto_translation" ]; then
-                    error "Failed to get auto-translations, $localisation"
-                    continue;
+                    error 'Failed to get auto-translations. Something went wrong, try to restart Polyglot'
+                    exit 50
                 fi
             fi
 
