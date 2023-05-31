@@ -99,7 +99,7 @@ else
     exit 1
 fi
 
-if [ $is_mac_os = false ]; then
+if [ -n "$XCODE_VERSION_ACTUAL" ]; then
     info() {
         echo "[`date`] $@"
     }
