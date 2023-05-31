@@ -3,18 +3,6 @@
 SCRIPT_NAME="./polyglot"
 SCRIPT_NAME=${0:-$SCRIPT_NAME}
 
-warning() {
-    echo "`date`: [WARN] $@"
-}
-
-info() {
-    echo "`date`: [INFO] $@"
-}
-
-error() {
-    echo "`date`: [ERROR] $@"
-}
-
 print_help() {
   echo ""
   echo "Usage: $SCRIPT_NAME <token> [OPTIONS]"
@@ -99,6 +87,44 @@ while [[ $# -gt 0 ]]; do
 done
 
 set -- "${POSITIONAL_ARGS[@]}" # Restore positional arguments
+
+is_mac_os=false
+
+if [[ $(uname -s) == "Darwin" ]]; then
+    is_mac_os=true
+elif [[ $(uname -s) == "Linux" ]]; then
+    is_mac_os=false
+else
+    echo "Operating system is not supported"
+    exit 1
+fi
+
+if [ -n "$XCODE_VERSION_ACTUAL" ]; then
+    info() {
+        echo "[`date`] $@"
+    }
+
+    warning() {
+        echo "warning: [`date`] $@"
+    }
+
+    error() {
+        echo "error: [`date`] $@"
+    }
+else
+    info() {
+        echo "`date`: [INFO] $@"
+    }
+
+    warning() {
+        echo "`date`: [WARN] $@"
+    }
+
+    error() {
+        echo "`date`: [ERROR] $@"
+    }
+fi
+
 
 if [ "$clear_cache" != true ] && [[ $# -lt 1 ]]; then
     echo 'Tenant token is required as a first argument'
@@ -193,18 +219,6 @@ else
 fi
 
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
-is_mac_os=false
-
-if [[ $(uname -s) == "Darwin" ]]; then
-    is_mac_os=true
-elif [[ $(uname -s) == "Linux" ]]; then
-    is_mac_os=false
-else
-    error "Operating system is not supported"
-    exit 1
-fi
-
 export PATH=$BASEDIR/lib:$PATH
 
 if [ $is_mac_os = true ]; then
@@ -426,7 +440,7 @@ main() {
     duplicates=`find_duplicates "$base_file_content"`
 
     if [ -n "$duplicates" ] ; then
-        echo "Found duplicates in $base_file"
+        error "Found duplicates in $base_file"
         echo $duplicates
         exit 43
     fi
@@ -438,7 +452,7 @@ main() {
 
     case `echo $api_response | jq -r '.message?'` in
         'Not authorised')
-            echo "Invalid tenant token"
+            error "Invalid tenant token"
             exit 1;;
         'Not found')
             info "$product_id is not found, creating one with the following languages: $all_languages"
@@ -657,14 +671,14 @@ main() {
                     localisation="`translate_string \"$id\" \"$base_value\" \"$description\" \"$desired_max_length\"`"
 
                     if [ "`echo \"$localisation\" | grep \"$free_plan_exhausted_mark\"`" ]; then
-                        echo "$localisation"
+                        error "$localisation"
                         exit $free_plan_exhausted_code
                     fi
 
                     if [ "`echo \"$localisation\" | grep \"$translation_error_mark\"`" ]; then
                         error_message="$localisation"
                         localisation=''
-                        error "Failed to get auto-translations. Retrying for \"$id\""
+                        info "Failed to get auto-translations. Retrying for \"$id\""
                     fi
 
                     (( i+= 1 ))
@@ -681,7 +695,7 @@ main() {
                 auto_translation=`get_translation 'auto' "$id" "$language"`
 
                 if [ -z "$auto_translation" ]; then
-                    error 'Failed to get auto-translations. Something went wrong, try to restart Polyglot'
+                    error 'Failed to get auto-translations. Something went wrong, please try to restart Polyglot'
                     exit $translation_error_code
                 fi
             fi
