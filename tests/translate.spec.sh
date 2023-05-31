@@ -75,7 +75,7 @@ setup() {
 }
 
 test_token_not_specified() {
-    assert_equals "`$script | grep 'Tenant token is required as a first argument'`" 'Tenant token is required as a first argument'
+    assert_equals 1 "`$script | grep -c 'Tenant token is required as a first argument'`"
 }
 
 test_product_id_not_specified() {
@@ -85,7 +85,7 @@ test_product_id_not_specified() {
 }
 
 test_invalid_tenant_token() {
-    assert_equals "`$script 11111 -p ../$app_name | grep 'Invalid tenant token'`" 'Invalid tenant token'
+    assert_equals 1 "`$script 11111 -p ../$app_name | grep -c 'Invalid tenant token'`"
 }
 
 test_clear_cache_error() {
