@@ -140,7 +140,7 @@ test_load_manual_translations() {
         local_env_init
     fi
 
-    output=`$script $tenant_token -p ../$app_name`
+    output=`$script $tenant_token -p ../$app_name -d '   '`
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     assert_equals "$translation" ' "de-manual-test"; // translator comment: "Need too more context!"'
     translation=`grep 'disabled_globally' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
