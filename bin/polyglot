@@ -10,6 +10,11 @@ print_help() {
   echo "Options:"
   echo "  -p, --path-to-files <PATH>         Path to the directory to search files to be localized (optional)"
   echo "  -f, --files-to-translate <FILES>   Comma-separated list of file names to translate (optional)"
+  echo "  -d, --descr-requirement <OPTION>   How the description will be taken into account for strings (optional)."
+  echo "                                     To remove the warning when running the script, pass this parameter with one of the values:"
+  echo "                                     'optional' - description will be optional for all strings,"
+  echo "                                     'only-new' - required only for strings without manual translations,"
+  echo "                                     'required' - required for all strings"
   echo "  -h, --help                         Show this help message"
   echo ""
   echo "Examples:"
@@ -52,6 +57,8 @@ digit_regex='^[0-9]+$'
 line_regex='^[[:space:]]*"([^"]+)"[[:space:]]*=[[:space:]]*".*";[[:space:]]*$'
 escaped_quote='\\"'
 quote_placeholder='\*\^\*'
+descr_requirement=''
+descr_requirement_options=('optional' 'only-new' 'required')
 translation_retries_number=${TRANSLATION_RETRIES_NUMBER:-5}
 
 while [[ $# -gt 0 ]]; do
@@ -63,6 +70,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         -f|--files-to-translate)
             files_to_translate="$2"
+            shift
+            shift
+            ;;
+        -d|--descr-requirement)
+            descr_requirement=`echo "$2" | xargs`
             shift
             shift
             ;;
@@ -127,11 +139,20 @@ fi
 
 
 if [ "$clear_cache" != true ] && [[ $# -lt 1 ]]; then
-    echo 'Tenant token is required as a first argument'
+    error 'Tenant token is required as a first argument'
     exit 1
 fi
 
 tenant_token="$1"
+
+if [ -z "$descr_requirement" ]; then
+    warning "Description requirement is not specified! If you want the best quality translation, we recommend to use a description for most strings. Please pass the -d argument with a value to make a description required or optional. Run Polyglot with '--help' for details"
+    descr_requirement='optional'
+elif [ -z "`echo \"${descr_requirement_options[@]}\" | grep $descr_requirement`" ]; then
+    error 'Invalid description requirement'
+    print_help
+    exit 1
+fi
 
 # Configure environment.
 # Declare dictionary if bash supports it
@@ -617,6 +638,11 @@ main() {
             disabled_translation="`(echo $line ; grep \"$escaped_old_record\" $file) | grep "polyglot:disable:this"`"
 
             if [ -n "$manual_translation" ]; then
+                if [ $descr_requirement = 'required' ] && [ -z "$description" ]; then
+                    error "\"$id\" has no description"
+                    exit 1
+                fi
+
                 translator_comment=`get_translator_comment "$id" "$language"`
                 manual_mark='corrected by a human'
 
@@ -664,6 +690,12 @@ main() {
                 localisation=''
                 error_message=''
                 i=0
+
+                if [ $descr_requirement != 'optional' ] && [ -z "$description" ]; then
+                    error "\"$id\" has no description"
+                    exit 1
+                fi
+
                 info "Getting auto-translations for \"$id\""
 
                 while [ $i -lt $translation_retries_number ] && [ -z "$localisation" ]; do

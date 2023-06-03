@@ -65,6 +65,10 @@ add_manual_translations() {
     curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/Cancel" -d "{ \"translations\": { \"en\": \"Cancel\", \"de\": \"de-manual-test\", \"fr\": \"fr-manual-test\" }, \"translatorComment\": \"Need too more context!\" }" -s >> /dev/null
 }
 
+add_manual_translation() {
+    curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$1" -d "{ \"translations\": { \"en\": \"$1\", \"de\": \"de-$1-test\", \"fr\": \"fr-$1-test\" }, \"description\": \"$2\" }" -s >> /dev/null
+}
+
 setup_suite() {
     clear_db "$product_id"
     local_env_init
@@ -136,7 +140,7 @@ test_load_manual_translations() {
         local_env_init
     fi
 
-    output=`$script $tenant_token -p ../$app_name`
+    output=`$script $tenant_token -p ../$app_name -d '   '`
     translation=`grep 'Cancel' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
     assert_equals "$translation" ' "de-manual-test"; // translator comment: "Need too more context!"'
     translation=`grep 'disabled_globally' $translations_path/de.lproj/$file_name | cut -d '=' -f 2`
@@ -337,4 +341,31 @@ test_free_plan_exhausted() {
     output=`$script $tenant_token -p ../$app_name`
     is_exit_with_error=`echo "$output" | grep -c "$free_plan_exhausted_mark"`
     assert_equals 1 $is_exit_with_error
+}
+
+test_required_descr_for_non_manual_translations() {
+    local_env_init
+    add_manual_translation 'Cancel'
+    output=`$script $tenant_token -p ../$app_name -d only-new`
+    assert_equals 1 `echo "$output" | grep -c '"Saved successfully" has no description'`
+}
+
+test_required_descr_for_all_translations() {
+    add_manual_translation 'Cancel'
+    echo "$initial_data" > "$translations_path/en.lproj/$file_name"
+    output=`$script $tenant_token -p ../$app_name -d required`
+    assert_equals 1 `echo "$output" | grep -c '"Cancel" has no description'`
+}
+
+test_no_error_when_manual_translation_has_descr() {
+    add_manual_translation 'Cancel' 'mobile app'
+    echo '// mobile app' > "$translations_path/en.lproj/$file_name"
+    echo "$initial_data" >> "$translations_path/en.lproj/$file_name"
+    output=`$script $tenant_token -p ../$app_name -d required`
+    assert_equals 0 `echo "$output" | grep -c '"Cancel" has no description'`
+}
+
+test_invalid_descr_requirement() {
+    output=`$script $tenant_token -p ../$app_name -d INVALID`
+    assert_equals 1 `echo "$output" | grep -c 'Invalid description requirement'`
 }
