@@ -429,6 +429,10 @@ if [ -z $langs_path ]; then
     exit 0
 fi
 
+if [ -z "`grep -l '=' $langs_path/*.lproj/*.strings | grep -v '/en.lproj/'`" ]; then
+    echo "{}" > "$prev_translations_file"
+fi
+
 escaped_langs_path="`escape_for_sed $langs_path`"
 all_languages=`ls -d $langs_path/*.lproj | grep -v 'Base\.lproj' | sed -e "s/$escaped_langs_path\///" -e 's/\.lproj//' | sort`
 
@@ -728,6 +732,7 @@ main() {
 
                 if [ -z "$auto_translation" ]; then
                     error 'Failed to get auto-translations. Something went wrong, please try to restart Polyglot'
+                    echo "Server response: $localisation"
                     exit $translation_error_code
                 fi
             fi
