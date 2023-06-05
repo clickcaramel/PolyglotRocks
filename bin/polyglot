@@ -732,7 +732,7 @@ main() {
 
                 if [ -z "$auto_translation" ]; then
                     error 'Failed to get auto-translations. Something went wrong, please try to restart Polyglot'
-                    echo "Server response: $localisation"
+                    error "Server response: $localisation"
                     exit $translation_error_code
                 fi
             fi
