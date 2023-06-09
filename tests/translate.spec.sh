@@ -369,3 +369,13 @@ test_invalid_descr_requirement() {
     output=`$script $tenant_token -p ../$app_name -d INVALID`
     assert_equals 1 `echo "$output" | grep -c 'Invalid description requirement'`
 }
+
+test_load_all_auto_translations_if_files_empty() {
+    echo "$initial_data" > "$translations_path/en.lproj/$file_name"
+    output=`$script $tenant_token -p ../$app_name`
+    echo "" > "$translations_path/fr.lproj/$file_name"
+    echo "" > "$translations_path/de.lproj/$file_name"
+    output=`$script $tenant_token -p ../$app_name`
+    assert_equals 1 `echo "$output" | grep -c 'Indexing auto translations'`
+    assert_equals 0 `echo "$output" | grep -c 'Getting auto-translations for'`
+}
