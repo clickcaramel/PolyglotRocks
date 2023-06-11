@@ -350,14 +350,13 @@ translate_string() {
         max_len=$4
     fi
 
-    api_response=$(curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$encoded_id" -d "{ \"translations\": { \"en\": \"$value\" }, \"description\": \"$descr\", \"desiredMaxLength\": $max_len }" -s)
+    response=$(curl -X PUT -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings/$encoded_id" -d "{ \"translations\": { \"en\": \"$value\" }, \"description\": \"$descr\", \"desiredMaxLength\": $max_len }" -s)
 
-    if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
-        response_json=`response_to_js_map "[$api_response]"`
-        echo "$response_json"
-    elif [ "`echo \"$api_response\" | grep 'paymentLinks'`" ]; then
-        premium_url=`echo "$api_response" | jq '.paymentLinks.premium' | sed -e 's/^"//' -e 's/"$//'`
-        unlimited_ai_url=`echo "$api_response" | jq '.paymentLinks.unlimitedAi' | sed -e 's/^"//' -e 's/"$//'`
+    if [ "`echo \"$response\" | grep 'stringId'`" ]; then
+        echo "$response"
+    elif [ "`echo \"$response\" | grep 'paymentLinks'`" ]; then
+        premium_url=`echo "$response" | jq '.paymentLinks.premium' | sed -e 's/^"//' -e 's/"$//'`
+        unlimited_ai_url=`echo "$response" | jq '.paymentLinks.unlimitedAi' | sed -e 's/^"//' -e 's/"$//'`
         echo "You've reached limits of your free plan. Subscribe to remove the limits"
         echo "Premium plan with translations by humans: [$premium_url]"
         echo "Unlimited AI plan: [$unlimited_ai_url]"
@@ -365,7 +364,7 @@ translate_string() {
     else
         echo "Something went wrong. Please try to restart Polyglot or contact our support team at $support_email. Please, provide the following information:"
         echo "Parameters: key=$id; encoded_id=$encoded_id; value=$value; descr=$descr"
-        echo "Server Response: ${api_response}"
+        echo "Server Response: ${response}"
         echo "$translation_error_mark"
     fi
 }
@@ -693,6 +692,7 @@ main() {
             if [ -z "$auto_translation" ]; then
                 localisation=''
                 error_message=''
+                api_response=''
                 i=0
 
                 if [ $descr_requirement != 'optional' ] && [ -z "$description" ]; then
@@ -704,15 +704,16 @@ main() {
 
                 while [ $i -lt $translation_retries_number ] && [ -z "$localisation" ]; do
                     sleep $i
-                    localisation="`translate_string \"$id\" \"$base_value\" \"$description\" \"$desired_max_length\"`"
+                    api_response="`translate_string \"$id\" \"$base_value\" \"$description\" \"$desired_max_length\"`"
+                    localisation=`response_to_js_map "[$api_response]"`
 
-                    if [ "`echo \"$localisation\" | grep \"$free_plan_exhausted_mark\"`" ]; then
-                        error "$localisation"
+                    if [ "`echo \"$api_response\" | grep \"$free_plan_exhausted_mark\"`" ]; then
+                        error "$api_response"
                         exit $free_plan_exhausted_code
                     fi
 
-                    if [ "`echo \"$localisation\" | grep \"$translation_error_mark\"`" ]; then
-                        error_message="$localisation"
+                    if [ "`echo \"$api_response\" | grep \"$translation_error_mark\"`" ]; then
+                        error_message="$api_response"
                         localisation=''
                         info "Failed to get auto-translations. Retrying for \"$id\""
                     fi
@@ -732,7 +733,7 @@ main() {
 
                 if [ -z "$auto_translation" ]; then
                     error 'Failed to get auto-translations. Something went wrong, please try to restart Polyglot'
-                    error "Server response: $localisation"
+                    error "Server response: $api_response"
                     exit $translation_error_code
                 fi
             fi
