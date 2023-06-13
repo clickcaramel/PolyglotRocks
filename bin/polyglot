@@ -387,7 +387,7 @@ if [ "$clear_cache" == true ]; then
     fi
 
     echo "{}" > "$prev_translations_file"
-    echo "" > "$backup_langs_file"
+    rm "$backup_langs_file"
     echo 'Cache is successfully cleared'
     exit 0
 fi
@@ -431,6 +431,7 @@ fi
 
 if [ -z "`grep -l '=' $langs_path/*.lproj/*.strings | grep -v '/en.lproj/'`" ]; then
     echo "{}" > "$prev_translations_file"
+    rm "$backup_langs_file"
 fi
 
 escaped_langs_path="`escape_for_sed $langs_path`"
