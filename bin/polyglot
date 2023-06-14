@@ -247,16 +247,28 @@ if [ $is_mac_os = true ]; then
         jq-osx-amd64 "$@"
     }
     export -f jq
+
+    calc_md5() {
+        echo "$1" | md5
+    }
 else
     jq() {
         jq-linux64 "$@"
     }
     export -f jq
+
+    calc_md5() {
+        echo "$1" | md5sum | cut -d ' ' -f 1
+    }
 fi
 
 backup_root="/tmp"
 if [ -n "$GITHUB_HEAD_REF" ]; then
     backup_root="./tmp"
+fi
+
+if [ -z $project_path ] ; then
+    project_path="${PROJECT_DIR:-./}"
 fi
 
 if [ -n "$product_id" ]; then
@@ -271,7 +283,8 @@ if [ -n "$product_id" ]; then
     fi
 
     branch=`echo "$branch" | tr -d '/()'`
-    backup_path="$backup_root/$product_id/$branch"
+    project_path_hash=`calc_md5 "$project_path"`
+    backup_path="$backup_root/$product_id/$branch/$project_path_hash"
     backup_file='.last_used_manual_translations'
     backup_langs_file="$backup_path/.languages"
     prev_translations_file="$backup_path/$backup_file"
@@ -297,14 +310,6 @@ escape_line_breaks() {
 response_to_js_map() {
     fixed_response=`echo "$1" | sed -e "s/$escaped_quote/$quote_placeholder/g"`
     echo "$fixed_response" | jq -r 'map( { (.stringId|tostring): (.translations + {description: .description, desiredMaxLength: .desiredMaxLength}) } ) | add | del(.[].stringId)'
-}
-
-calc_md5() {
-    if [ $is_mac_os = true ]; then
-        echo "$1" | md5
-    else
-        echo "$1" | md5sum | cut -d ' ' -f 1
-    fi
 }
 
 find_duplicates() {
@@ -392,10 +397,6 @@ if [ "$clear_cache" == true ]; then
     exit 0
 fi
 
-if [ -z $project_path ] ; then
-    project_path="${PROJECT_DIR:-./}"
-fi
-
 if [ -z $product_id ] ; then
     echo 'Product id is not specified. Use $PRODUCT_BUNDLE_IDENTIFIER for this'
     exit 1
@@ -431,7 +432,6 @@ fi
 
 if [ -z "`grep -l '=' $langs_path/*.lproj/*.strings | grep -v '/en.lproj/'`" ]; then
     echo "{}" > "$prev_translations_file"
-    rm "$backup_langs_file"
 fi
 
 escaped_langs_path="`escape_for_sed $langs_path`"
