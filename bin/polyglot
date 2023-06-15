@@ -422,6 +422,7 @@ new_translations_file="$backup_root/translations.$RANDOM.json"
 echo '{}' > $new_translations_file
 
 langs_path=`find $project_path \( -name Pods -o -name Carthage \) -prune -o -type d -name *.lproj -print | head -1 | sed -e 's/\/[a-zA-Z\-]*\.lproj//'`
+are_localisation_files_empty=false
 
 if [ -z $langs_path ]; then
     warning "Localization files were not found. To add them, follow the documentation: [$support_url]"
@@ -430,6 +431,7 @@ fi
 
 if [ -z "`grep -l '=' $langs_path/*.lproj/*.strings | grep -v '/en.lproj/'`" ]; then
     echo "{}" > "$prev_translations_file"
+    are_localisation_files_empty=true
 fi
 
 escaped_langs_path="`escape_for_sed $langs_path`"
@@ -472,9 +474,10 @@ main() {
     [ -f "$prev_translations_file" ] || echo "{}" > "$prev_translations_file"
 
     info "Downloading translations from the server"
-    api_response=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings?manual=true" -s)
+    manual_translations_response=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings?manual=true" -s)
+    auto_translations_response=''
 
-    case `echo $api_response | jq -r '.message?'` in
+    case `echo $manual_translations_response | jq -r '.message?'` in
         'Not authorised')
             error "Invalid tenant token"
             exit 1;;
@@ -483,9 +486,21 @@ main() {
             update_languages "$all_languages"
     esac
 
-    if [ "`echo \"$api_response\" | grep 'stringId'`" ]; then
-        info "Saving the downloaded translations to $new_translations_file"
-        (response_to_js_map "$api_response") > $new_translations_file
+    if [ $are_localisation_files_empty = true ]; then
+        auto_translations_response=$(curl -H "Accept: application/json" -H "Authorization: Bearer $tenant_token" -L "$api_url/products/$product_id/strings?manual=false" -s)
+
+        if [ -n "`echo \"$auto_translations_response\" | grep 'stringId'`" ]; then
+            info "Indexing auto translations"
+            response_json=`response_to_js_map "$auto_translations_response"`
+            fill_translations_map 'auto' "$response_json"
+        else
+            error "Failed to get all auto-translations at once. Server response: $auto_translations_response"
+        fi
+    fi
+
+    if [ "`echo \"$manual_translations_response\" | grep 'stringId'`" ]; then
+        info "Saving the downloaded manual translations to $new_translations_file"
+        (response_to_js_map "$manual_translations_response") > $new_translations_file
     fi
 
     if [ -f "$backup_langs_file" ]; then
@@ -504,7 +519,7 @@ main() {
         fi
     fi
 
-    info "Loading current and previous translations into memory from $prev_translations_file and $new_translations_file"
+    info "Loading current and previous manual translations into memory from $prev_translations_file and $new_translations_file"
     new_translations_data=`cat $new_translations_file`
     prev_translations_data=`cat $prev_translations_file`
 
