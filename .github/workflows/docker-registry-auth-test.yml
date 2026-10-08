@@ -1,0 +1,32 @@
+name: Docker registry auth tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+      - '.github/workflows/gpt-review.yml'
+      - '.github/workflows/docker-registry-auth-test.yml'
+      - 'scripts/docker-registry-auth.mjs'
+      - 'scripts/docker-registry-auth.test.mjs'
+  push:
+    paths:
+      - '.github/workflows/release.yml'
+      - '.github/workflows/gpt-review.yml'
+      - '.github/workflows/docker-registry-auth-test.yml'
+      - 'scripts/docker-registry-auth.mjs'
+      - 'scripts/docker-registry-auth.test.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  helper-tests:
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Test ephemeral registry auth helper
+        run: node --test scripts/docker-registry-auth.test.mjs
