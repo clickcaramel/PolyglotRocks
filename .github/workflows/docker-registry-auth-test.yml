@@ -8,6 +8,7 @@ on:
       - '.github/workflows/docker-registry-auth-test.yml'
       - 'scripts/docker-registry-auth.mjs'
       - 'scripts/docker-registry-auth.test.mjs'
+      - 'scripts/validate-docker-registry-auth-workflows.rb'
   push:
     paths:
       - '.github/workflows/release.yml'
@@ -15,6 +16,7 @@ on:
       - '.github/workflows/docker-registry-auth-test.yml'
       - 'scripts/docker-registry-auth.mjs'
       - 'scripts/docker-registry-auth.test.mjs'
+      - 'scripts/validate-docker-registry-auth-workflows.rb'
 
 permissions:
   contents: read
@@ -30,3 +32,5 @@ jobs:
           node-version: 24
       - name: Test ephemeral registry auth helper
         run: node --test scripts/docker-registry-auth.test.mjs
+      - name: Validate registry auth workflow JSON
+        run: ruby scripts/validate-docker-registry-auth-workflows.rb
