@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
       - uses: anc95/ChatGPT-CodeReview@main
         env:
